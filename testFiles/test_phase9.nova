@@ -1,0 +1,453 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  Phase 9 Stress Test  — bitwise · if-expr · structs · enums
+// ═══════════════════════════════════════════════════════════════════════════
+
+let passed = 0
+let failed = 0
+
+fn assert(cond, msg) {
+    if cond {
+        passed = passed + 1
+    } else {
+        print "FAIL: " + msg
+        failed = failed + 1
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PART 1 · Bitwise operators
+// ─────────────────────────────────────────────────────────────────────────────
+
+// basic operations
+assert(5 & 3 == 1,   "5 & 3 == 1")         // 101 & 011 = 001
+assert(5 | 3 == 7,   "5 | 3 == 7")         // 101 | 011 = 111
+assert(5 ^ 3 == 6,   "5 ^ 3 == 6")         // 101 ^ 011 = 110
+assert(1 << 3 == 8,  "1 << 3 == 8")
+assert(16 >> 2 == 4, "16 >> 2 == 4")
+assert(1 << 0 == 1,  "1 << 0 == 1")
+assert(8 >> 3 == 1,  "8 >> 3 == 1")
+assert(0 & 255 == 0, "0 & 255 == 0")
+assert(0 | 255 == 255, "0 | 255 == 255")
+assert(0 ^ 255 == 255, "0 ^ 255 == 255")
+assert(255 ^ 255 == 0, "255 ^ 255 == 0")
+
+// nibble mask
+assert(255 & 15 == 15,  "255 & 15 == 15")
+assert(170 | 85 == 255, "170 | 85 == 255")   // 10101010 | 01010101
+assert(255 ^ 15 == 240, "255 ^ 15 == 240")   // 11111111 ^ 00001111
+
+// precedence: arithmetic binds tighter than shift, shift tighter than &, then ^, then |
+assert(2 + 3 & 7 == 5,   "2+3 & 7 == 5")    // (2+3)&7 = 5&7 = 5
+assert(2 | 4 + 1 == 7,   "2|4+1 == 7")      // 2 | (4+1) = 010|101 = 111 = 7
+assert(1 | 2 ^ 3 == 1,   "1|2^3 == 1")      // 1 | (2^3) = 1|1 = 1
+assert(5 & 3 | 2 == 3,   "5&3|2 == 3")      // (5&3)|2 = 1|2 = 3
+assert(2 << 1 + 1 == 8,  "2<<1+1 == 8")     // 2 << (1+1) = 2<<2 = 8
+assert(8 >> 1 + 1 == 2,  "8>>1+1 == 2")     // 8 >> 2 = 2
+assert(4 << 2 == 16,     "4<<2 == 16")
+assert(1 << 8 == 256,    "1<<8 == 256")
+
+// bitwise in conditions
+fn is_odd(n)  { (n & 1) == 1 }
+fn is_even(n) { (n & 1) == 0 }
+assert(is_odd(7),    "is_odd(7)")
+assert(is_odd(1),    "is_odd(1)")
+assert(!is_odd(4),   "!is_odd(4)")
+assert(is_even(0),   "is_even(0)")
+assert(is_even(256), "is_even(256)")
+assert(!is_even(3),  "!is_even(3)")
+
+// bit flags
+let READ  = 1
+let WRITE = 2
+let EXEC  = 4
+let perms = READ | WRITE
+assert((perms & READ)  != 0, "perms has READ")
+assert((perms & WRITE) != 0, "perms has WRITE")
+assert((perms & EXEC)  == 0, "perms has no EXEC")
+let perms2 = perms | EXEC
+assert((perms2 & EXEC) != 0, "perms2 has EXEC")
+let perms3 = perms2 ^ WRITE
+assert((perms3 & WRITE) == 0, "perms3 cleared WRITE")
+assert((perms3 & READ)  != 0, "perms3 still has READ")
+
+// bit operations in loops
+let bits = 0
+let i = 0
+while i < 8 {
+    bits = bits | (1 << i)
+    i = i + 1
+}
+assert(bits == 255, "all 8 bits set = 255")
+
+fn count_bits(n) {
+    let c = 0
+    let x = n
+    while x > 0 {
+        c = c + (x & 1)
+        x = x >> 1
+    }
+    c
+}
+assert(count_bits(0)   == 0, "count_bits(0)==0")
+assert(count_bits(1)   == 1, "count_bits(1)==1")
+assert(count_bits(255) == 8, "count_bits(255)==8")
+assert(count_bits(170) == 4, "count_bits(170)==4")   // 10101010
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PART 1b · if-else as expression
+// ─────────────────────────────────────────────────────────────────────────────
+
+let a = if true  { 10 } else { 20 }
+let b = if false { 10 } else { 20 }
+assert(a == 10, "if true => 10")
+assert(b == 20, "if false => 20")
+
+fn abs(x) { if x < 0 { -x } else { x } }
+assert(abs(5)  == 5,  "abs(5)==5")
+assert(abs(-3) == 3,  "abs(-3)==3")
+assert(abs(0)  == 0,  "abs(0)==0")
+
+fn sign(x) { if x > 0 { 1 } else { if x < 0 { -1 } else { 0 } } }
+assert(sign(5)  ==  1, "sign(5)==1")
+assert(sign(-2) == -1, "sign(-2)==-1")
+assert(sign(0)  ==  0, "sign(0)==0")
+
+// if-expr in array and arithmetic
+let arr = [if true { 1 } else { 2 }, if false { 3 } else { 4 }]
+assert(arr[0] == 1, "if-expr in array[0]")
+assert(arr[1] == 4, "if-expr in array[1]")
+
+let x = 5
+let label = if x < 0 { "neg" } else { if x == 0 { "zero" } else { "pos" } }
+assert(label == "pos", "nested if-expr label")
+
+// if-expr as function argument
+fn double(n) { n * 2 }
+assert(double(if true { 3 } else { 7 }) == 6,  "if-expr as arg")
+
+// if-expr in let with compound: abs via expression
+let diff = abs(if true { -7 } else { 7 })
+assert(diff == 7, "abs(if-expr)==7")
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PART 2 · Structs
+// ─────────────────────────────────────────────────────────────────────────────
+
+struct Point { x, y }
+struct Rect  { origin, size }
+struct Size  { w, h }
+struct Person { name, age, active }
+
+// basic instantiation and access
+let p = Point { x: 3, y: 4 }
+assert(p.x == 3, "p.x == 3")
+assert(p.y == 4, "p.y == 4")
+
+// field mutation (reference semantics)
+p.x = 10
+assert(p.x == 10, "p.x after mutation == 10")
+p.x = p.x + p.y
+assert(p.x == 14, "p.x += p.y")
+
+// type()
+assert(type(p) == "struct:Point", "type(p)")
+assert(type(Point) == "structdef", "type(Point)")
+
+// nested structs
+let r = Rect { origin: Point { x: 0, y: 0 }, size: Size { w: 100, h: 50 } }
+assert(r.origin.x == 0,   "r.origin.x")
+assert(r.size.w   == 100, "r.size.w")
+r.origin.x = 5
+assert(r.origin.x == 5, "nested mutation r.origin.x=5")
+
+// struct in function
+fn distance(a, b) {
+    let dx = a.x - b.x
+    let dy = a.y - b.y
+    dx * dx + dy * dy   // squared distance (avoid sqrt)
+}
+let p1 = Point { x: 0, y: 0 }
+let p2 = Point { x: 3, y: 4 }
+assert(distance(p1, p2) == 25, "squared distance 3-4-5")
+
+// function that returns struct
+fn make_point(x, y) { Point { x: x, y: y } }
+let q = make_point(7, 8)
+assert(q.x == 7, "make_point q.x")
+assert(q.y == 8, "make_point q.y")
+
+// mutation via shared reference: two variables pointing at same struct
+let s1 = Point { x: 1, y: 2 }
+let s2 = s1          // shared reference
+s2.x = 99
+assert(s1.x == 99, "shared ref: s1.x == 99 after s2.x=99")
+
+// array of structs
+let points = [Point { x: 0, y: 0 }, Point { x: 1, y: 1 }, Point { x: 2, y: 2 }]
+assert(points[0].x == 0, "points[0].x")
+assert(points[2].y == 2, "points[2].y")
+points[1].x = 42
+assert(points[1].x == 42, "points[1].x mutated")
+
+// struct with bool and string fields
+let alice = Person { name: "Alice", age: 30, active: true }
+assert(alice.name   == "Alice", "alice.name")
+assert(alice.age    == 30,      "alice.age")
+assert(alice.active == true,    "alice.active")
+alice.age = alice.age + 1
+assert(alice.age    == 31,      "alice.age after increment")
+
+// function that mutates struct argument
+fn deactivate(person) { person.active = false }
+deactivate(alice)
+assert(alice.active == false, "alice deactivated")
+
+// struct field with arithmetic
+fn area_of_rect(r) { r.size.w * r.size.h }
+let rect = Rect { origin: Point { x: 0, y: 0 }, size: Size { w: 8, h: 6 } }
+assert(area_of_rect(rect) == 48, "area_of_rect 8*6==48")
+
+// struct equality is reference (two instances with same values are NOT equal)
+let pa = Point { x: 1, y: 2 }
+let pb = Point { x: 1, y: 2 }
+assert(pa != pb, "struct identity: pa != pb")
+let pc = pa
+assert(pc == pa, "struct identity: pc == pa (same ref)")
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PART 3 · Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Dir   { North, South, East, West }
+enum Shape { Circle(r), Rect(w, h), Triangle(a, b, c), Point }
+enum Tree  { Leaf(val), Branch(left, right) }
+enum Opt   { Some(v), None }
+
+// unit variant identity
+assert(Dir.North == Dir.North, "Dir.North == Dir.North")
+assert(Dir.North != Dir.South, "Dir.North != Dir.South")
+assert(Dir.East  != Dir.West,  "Dir.East  != Dir.West")
+
+// type()
+assert(type(Dir.North) == "enum:Dir:North", "type(Dir.North)")
+assert(type(Dir)       == "enumdef",        "type(Dir)")
+assert(type(Shape)     == "enumdef",        "type(Shape)")
+
+// format
+assert(str(Dir.North)    == "Dir.North",      "str(Dir.North)")
+assert(str(Shape.Point)  == "Shape.Point",    "str(Shape.Point)")
+
+// payload variants
+let c = Shape.Circle(5)
+let r2 = Shape.Rect(3, 4)
+let t = Shape.Triangle(3, 4, 5)
+assert(type(c)  == "enum:Shape:Circle",   "type(c)")
+assert(type(r2) == "enum:Shape:Rect",     "type(r2)")
+assert(str(c)   == "Shape.Circle(5)",     "str(c)")
+assert(str(r2)  == "Shape.Rect(3, 4)",    "str(r2)")
+
+// enum equality with payload
+assert(Shape.Circle(5)  == Shape.Circle(5),  "Circle(5)==Circle(5)")
+assert(Shape.Circle(5)  != Shape.Circle(6),  "Circle(5)!=Circle(6)")
+assert(Shape.Circle(5)  != Shape.Rect(5, 1), "Circle!=Rect")
+assert(Shape.Rect(3, 4) == Shape.Rect(3, 4), "Rect(3,4)==Rect(3,4)")
+assert(Shape.Rect(3, 4) != Shape.Rect(3, 5), "Rect(3,4)!=Rect(3,5)")
+
+// match on unit enum
+fn dir_name(d) {
+    match d {
+        Dir.North => "north"
+        Dir.South => "south"
+        Dir.East  => "east"
+        Dir.West  => "west"
+        _ => "unknown"
+    }
+}
+assert(dir_name(Dir.North) == "north", "dir_name north")
+assert(dir_name(Dir.South) == "south", "dir_name south")
+assert(dir_name(Dir.East)  == "east",  "dir_name east")
+assert(dir_name(Dir.West)  == "west",  "dir_name west")
+
+// match with payload bindings
+fn area(s) {
+    match s {
+        Shape.Circle(r)        => r * r * 3
+        Shape.Rect(w, h)       => w * h
+        Shape.Triangle(a, b, c) => (a + b + c)   // perimeter here for simplicity
+        Shape.Point            => 0
+        _ => -1
+    }
+}
+assert(area(Shape.Circle(5))       == 75, "area circle r=5")
+assert(area(Shape.Rect(4, 6))      == 24, "area rect 4x6")
+assert(area(Shape.Triangle(3,4,5)) == 12, "perimeter 3+4+5")
+assert(area(Shape.Point)           == 0,  "area point")
+
+// match returning value in let
+let result = match Dir.East {
+    Dir.North => 0
+    Dir.South => 1
+    Dir.East  => 2
+    Dir.West  => 3
+    _ => -1
+}
+assert(result == 2, "match-as-expr result==2")
+
+// function whose body IS a match (implicit return)
+fn opt_or(opt, default) {
+    match opt {
+        Opt.Some(v) => v
+        Opt.None    => default
+    }
+}
+assert(opt_or(Opt.Some(42), 0)  == 42, "opt_or Some")
+assert(opt_or(Opt.None, 99)     == 99, "opt_or None")
+assert(opt_or(Opt.Some("hi"), "bye") == "hi", "opt_or Some str")
+
+// nested match (match inside match arm)
+enum Color { Red, Green, Blue }
+fn color_brightness(c) {
+    match c {
+        Color.Red   => 76
+        Color.Green => 150
+        Color.Blue  => 29
+        _ => 0
+    }
+}
+fn describe_pixel(px) {
+    match px {
+        Shape.Circle(r) => {
+            let bright = color_brightness(Color.Red)
+            "circle brightness " + str(bright)
+        }
+        Shape.Point => "dot"
+        _ => "other"
+    }
+}
+assert(describe_pixel(Shape.Circle(5)) == "circle brightness 76", "nested match")
+assert(describe_pixel(Shape.Point)     == "dot",                   "nested match point")
+
+// enum constructor as first-class value
+let mk_circle = Shape.Circle
+let c2 = mk_circle(10)
+assert(c2 == Shape.Circle(10),  "constructor as value")
+assert(area(c2) == 300,          "area via constructor var")
+
+// array of enums + for loop with match
+let dirs = [Dir.North, Dir.East, Dir.South, Dir.West]
+let dir_sum = 0
+for d in dirs {
+    dir_sum = dir_sum + match d {
+        Dir.North => 1
+        Dir.South => 2
+        Dir.East  => 3
+        Dir.West  => 4
+        _ => 0
+    }
+}
+assert(dir_sum == 10, "dir_sum 1+3+2+4==10")
+
+// recursive enum: Tree
+fn tree_sum(t) {
+    match t {
+        Tree.Leaf(v)       => v
+        Tree.Branch(l, r)  => tree_sum(l) + tree_sum(r)
+        _ => 0
+    }
+}
+let leaf1 = Tree.Leaf(1)
+let leaf2 = Tree.Leaf(2)
+let leaf3 = Tree.Leaf(3)
+let branch1 = Tree.Branch(leaf1, leaf2)
+let root    = Tree.Branch(branch1, leaf3)
+assert(tree_sum(leaf1)   == 1, "tree_sum leaf1")
+assert(tree_sum(branch1) == 3, "tree_sum branch(1,2)")
+assert(tree_sum(root)    == 6, "tree_sum root(1+2+3)")
+
+// tree depth
+fn tree_depth(t) {
+    match t {
+        Tree.Leaf(_)      => 1
+        Tree.Branch(l, r) => {
+            let ld = tree_depth(l)
+            let rd = tree_depth(r)
+            1 + if ld > rd { ld } else { rd }
+        }
+        _ => 0
+    }
+}
+assert(tree_depth(leaf1)   == 1, "depth leaf==1")
+assert(tree_depth(branch1) == 2, "depth branch==2")
+assert(tree_depth(root)    == 3, "depth root==3")
+
+// enum inside struct
+struct Entity { id, shape, direction }
+let hero = Entity { id: 1, shape: Shape.Circle(5), direction: Dir.North }
+assert(hero.id        == 1,            "entity id")
+assert(hero.direction == Dir.North,    "entity direction")
+assert(area(hero.shape) == 75,         "entity shape area")
+hero.direction = Dir.East
+assert(hero.direction == Dir.East,     "entity direction mutated")
+assert(dir_name(hero.direction) == "east", "entity dir_name east")
+
+// wildcard only arm
+fn catch_all(d) {
+    match d {
+        _ => "any"
+    }
+}
+assert(catch_all(Dir.North) == "any", "wildcard-only arm")
+assert(catch_all(42)        == "any", "wildcard with int")
+
+// Opt chaining pattern
+fn opt_map(opt, f) {
+    match opt {
+        Opt.Some(v) => Opt.Some(f(v))
+        Opt.None    => Opt.None
+    }
+}
+let doubled = opt_map(Opt.Some(5), (x) -> x * 2)
+assert(opt_or(doubled, 0) == 10, "opt_map doubled")
+let nothing = opt_map(Opt.None, (x) -> x * 2)
+assert(opt_or(nothing, -1) == -1, "opt_map on None")
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PART 4 · Cross-feature: bitwise + structs + enums together
+// ─────────────────────────────────────────────────────────────────────────────
+
+struct Flags { value }
+fn flag_set(f, bit)   { Flags { value: f.value | bit } }
+fn flag_clear(f, bit) { Flags { value: f.value & (255 ^ bit) } }
+fn flag_has(f, bit)   { (f.value & bit) != 0 }
+
+let f = Flags { value: 0 }
+let f = flag_set(f, 1)
+let f = flag_set(f, 4)
+assert(flag_has(f, 1), "flag has bit 1")
+assert(flag_has(f, 4), "flag has bit 4")
+assert(!flag_has(f, 2), "flag not bit 2")
+let f = flag_clear(f, 1)
+assert(!flag_has(f, 1), "flag cleared bit 1")
+assert(flag_has(f, 4),  "flag still has bit 4")
+
+enum Status { Ok(code), Err(msg) }
+fn handle(s) {
+    match s {
+        Status.Ok(code)  => if (code & 1) == 0 { "even ok" } else { "odd ok" }
+        Status.Err(msg)  => "error: " + msg
+    }
+}
+assert(handle(Status.Ok(4))     == "even ok",       "handle Ok(4)")
+assert(handle(Status.Ok(3))     == "odd ok",        "handle Ok(3)")
+assert(handle(Status.Err("x"))  == "error: x",      "handle Err")
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Summary
+// ─────────────────────────────────────────────────────────────────────────────
+print "passed: " + str(passed)
+print "failed: " + str(failed)
+if failed == 0 {
+    print "ALL TESTS PASSED"
+} else {
+    print "SOME TESTS FAILED"
+}

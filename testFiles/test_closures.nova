@@ -1,0 +1,68 @@
+// Basic lambda stored in a variable
+let double = (x) -> x * 2
+print double(5)    // 10
+print double(21)   // 42
+
+// Lambda with two params
+let add = (x, y) -> x + y
+print add(3, 4)    // 7
+print add(10, 20)  // 30
+
+// Lambda passed to a higher-order function
+fn apply(f, x) {
+    f(x)
+}
+print apply(double, 6)    // 12
+print apply(double, 100)  // 200
+
+// Closure capturing a single outer variable
+let offset = 10
+let shift = (x) -> x + offset
+print shift(5)   // 15
+print shift(0)   // 10
+
+// Closure capturing multiple outer variables
+let a = 3
+let b = 7
+let combine = (x) -> x * a + b
+print combine(2)  // 13
+print combine(0)  // 7
+
+// Function returning a closure (classic make_adder)
+fn make_adder(n) {
+    (x) -> x + n
+}
+let add5  = make_adder(5)
+let add10 = make_adder(10)
+print add5(1)    // 6
+print add5(100)  // 105
+print add10(1)   // 11
+print add10(100) // 110
+
+// Closure capturing two params from the enclosing function
+fn make_between(lo, hi) {
+    (x) -> x >= lo && x <= hi
+}
+let in_range = make_between(10, 20)
+print in_range(5)   // false
+print in_range(10)  // true
+print in_range(15)  // true
+print in_range(21)  // false
+
+// Compose: higher-order function returning a closure that calls two others
+fn compose(f, g) {
+    (x) -> f(g(x))
+}
+let inc = (x) -> x + 1
+let dbl = (x) -> x * 2
+let inc_then_dbl = compose(dbl, inc)
+let dbl_then_inc = compose(inc, dbl)
+print inc_then_dbl(3)  // dbl(inc(3)) = dbl(4) = 8
+print dbl_then_inc(3)  // inc(dbl(3)) = inc(6) = 7
+
+// apply_twice
+fn apply_twice(f, val) {
+    f(f(val))
+}
+print apply_twice((x) -> x + 1, 10)  // 12
+print apply_twice(dbl, 3)             // 12

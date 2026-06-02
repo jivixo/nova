@@ -1,0 +1,267 @@
+// Stress test: map assignment, string indexing, negative indices,
+//              string iteration, default params, destructuring, ord/chr
+
+// ── 1. HASHMAP INDEX ASSIGNMENT ──────────────────────────────────
+print "--- map[key] = value ---"
+let m = {}
+m["name"] = "Alice"
+m["age"]  = 30
+print m["name"]          // Alice
+print m["age"]           // 30
+
+// overwrite existing key
+m["age"] = 31
+print m["age"]           // 31
+
+// dynamic key
+let k = "city"
+m[k] = "NY"
+print m["city"]          // NY
+print len(keys(m))       // 3
+
+// compound assignment on map value — read, modify, write back
+m["age"] = m["age"] + 1
+print m["age"]           // 32
+
+// nested map mutation — CoW: must use intermediate variable
+let config = {"db": {"host": "localhost", "port": 5432}}
+let db = config["db"]
+db["port"] = 5433
+config["db"] = db
+print config["db"]["port"]   // 5433
+
+// ── 2. STRING INDEXING ────────────────────────────────────────────
+print "--- string indexing ---"
+let s = "hello"
+print s[0]           // h
+print s[1]           // e
+print s[4]           // o
+print s[0] == "h"   // true
+
+// out of bounds caught by try
+try { print s[99] } catch e { print "caught: out of bounds" }
+
+// ── 3. NEGATIVE INDEXING ─────────────────────────────────────────
+print "--- negative indexing ---"
+let arr = [10, 20, 30, 40, 50]
+print arr[-1]        // 50
+print arr[-2]        // 40
+print arr[-5]        // 10  (first element)
+
+let s = "hello"
+print s[-1]          // o
+print s[-2]          // l
+print s[-5]          // h
+
+// negative on assignment
+arr[-1] = 99
+print arr[-1]        // 99
+print arr[4]         // 99  (same slot)
+
+// out of bounds negative
+try { print arr[-99] } catch e { print "caught: out of bounds" }
+
+// ── 4. STRING ITERATION ──────────────────────────────────────────
+print "--- string iteration ---"
+let result = ""
+for ch in "hello" {
+    result = result + upper(ch)
+}
+print result         // HELLO
+
+// count vowels
+fn count_vowels(s) {
+    let count = 0
+    for ch in s {
+        if contains("aeiou", ch) { count += 1 }
+    }
+    count
+}
+print count_vowels("hello world")    // 3
+print count_vowels("rhythm")         // 0
+print count_vowels("aeiou")          // 5
+
+// build reversed string via iteration
+fn rev(s) {
+    let result = ""
+    for ch in s { result = ch + result }
+    result
+}
+print rev("nova")    // avon
+print rev("")        // ""
+
+// ── 5. ORD AND CHR ───────────────────────────────────────────────
+print "--- ord / chr ---"
+print ord("a")       // 97
+print ord("z")       // 122
+print ord("A")       // 65
+print ord("0")       // 48
+print chr(97)        // a
+print chr(65)        // A
+print chr(48)        // 0
+
+// round trip
+print chr(ord("x"))  // x
+print ord(chr(90))   // 90
+
+// caesar using ord/chr — clean version
+fn caesar(text, shift) {
+    let result = ""
+    for ch in text {
+        let c = ord(ch)
+        if c >= 97 && c <= 122 {
+            result = result + chr(mod(c - 97 + shift, 26) + 97)
+        } else {
+            result = result + ch
+        }
+    }
+    result
+}
+print caesar("hello", 3)    // khoor
+print caesar("khoor", -3)   // hello
+print caesar("xyz", 3)      // abc
+print caesar("Hello, World!", 13)   // Hryyb, Wbeyq! (only lowercase shifted)
+
+// ── 6. DEFAULT PARAMETERS ────────────────────────────────────────
+print "--- default parameters ---"
+fn greet(name, msg = "hello") {
+    "{msg}, {name}!"
+}
+print greet("Alice")           // hello, Alice!
+print greet("Bob", "hi")       // hi, Bob!
+print greet("Carol", "hey")    // hey, Carol!
+
+fn repeat(s, n = 3) {
+    let result = ""
+    for i in 0..n { result = result + s }
+    result
+}
+print repeat("ab")        // ababab
+print repeat("ab", 2)     // abab
+print repeat("ab", 0)     // ""
+
+fn range_sum(start = 0, end) {
+    let total = 0
+    for i in start..end { total += i }
+    total
+}
+print range_sum(0, 5)    // 10  (0+1+2+3+4)
+print range_sum(3, 6)    // 12  (3+4+5)
+
+// default used in recursion
+fn countdown(n, step = 1) {
+    if n <= 0 { return "done" }
+    countdown(n - step, step)
+}
+print countdown(10)       // done
+print countdown(10, 3)    // done
+
+// multiple defaults
+fn pad(s, width = 10, char = " ") {
+    let result = s
+    while len(result) < width { result = result + char }
+    result
+}
+print len(pad("hi"))          // 10
+print len(pad("hi", 5))       // 5
+print pad("hi", 6, "-")       // hi----
+
+// ── 7. ARRAY DESTRUCTURING ───────────────────────────────────────
+print "--- array destructuring ---"
+let [a, b, c] = [1, 2, 3]
+print a    // 1
+print b    // 2
+print c    // 3
+
+// fewer names than elements — extras ignored
+let [x, y] = [10, 20, 30, 40]
+print x    // 10
+print y    // 20
+
+// more names than elements — extras get nil
+let [p, q, r] = [7, 8]
+print p    // 7
+print q    // 8
+print r    // nil
+
+// destructure in a loop (swap-like)
+let pairs = [[1, "one"], [2, "two"], [3, "three"]]
+for pair in pairs {
+    let [num, word] = pair
+    print "{num}: {word}"
+}
+// 1: one
+// 2: two
+// 3: three
+
+// destructure function return
+fn min_max(arr) {
+    let s = sort(arr)
+    return [s[0], s[-1]]
+}
+let [lo, hi] = min_max([3, 1, 4, 1, 5, 9, 2, 6])
+print lo    // 1
+print hi    // 9
+
+// ── 8. HASHMAP DESTRUCTURING ─────────────────────────────────────
+print "--- hashmap destructuring ---"
+let {name, age} = {"name": "Alice", "age": 30, "city": "NY"}
+print name    // Alice
+print age     // 30
+
+// missing key → nil
+let {score} = {"name": "Bob"}
+print score   // nil
+
+// destructure in a function
+fn greet_person(person) {
+    let {name, age} = person
+    "Hi {name}, you are {age} years old"
+}
+print greet_person({"name": "Carol", "age": 25})   // Hi Carol, you are 25 years old
+
+// nested destructure
+let person = {"name": "Dave", "address": {"city": "LA", "zip": "90001"}}
+let {name} = person
+let {city, zip} = person["address"]
+print name    // Dave
+print city    // LA
+print zip     // 90001
+
+// ── 9. COMBINED: ALL NEW FEATURES TOGETHER ───────────────────────
+print "--- combined ---"
+
+// frequency map built with map assignment
+fn freq(arr) {
+    let counts = {}
+    for item in arr {
+        let k = str(item)
+        counts[k] = (counts[k] ?? 0) + 1
+    }
+    counts
+}
+let f = freq([1, 2, 1, 3, 2, 1])
+print f["1"]    // 3
+print f["2"]    // 2
+print f["3"]    // 1
+
+// reverse words using string iteration + array
+fn reverse_words(sentence) {
+    let words = split(sentence, " ")
+    let result = []
+    for word in words {
+        let rev = ""
+        for ch in word { rev = ch + rev }
+        result = push(result, rev)
+    }
+    join(result, " ")
+}
+print reverse_words("hello world")   // olleh dlrow
+
+// ROT13 using default param
+fn rot(text, shift = 13) {
+    caesar(text, shift)
+}
+print rot("hello")              // uryyb
+print rot("uryyb")              // hello  (ROT13 is its own inverse)
+print rot("hello", 1)           // ifmmp

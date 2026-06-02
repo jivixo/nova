@@ -1,0 +1,83 @@
+// Item 8: all builtins
+
+// Type conversion
+print str(42)         // 42
+print str(3.14)       // 3.14
+print str(true)       // true
+print str(nil)        // nil
+print int("99")       // 99
+print int(7.9)        // 7
+print float("2.5")    // 2.5
+print float(3)        // 3
+print type(42)        // int
+print type("hi")      // str
+print type(true)      // bool
+print type(nil)       // nil
+print type([1,2])     // array
+
+// Math
+print abs(-5)         // 5
+print abs(3)          // 3
+print sqrt(16.0)      // 4
+print floor(3.7)      // 3
+print ceil(3.2)       // 4
+print round(3.5)      // 4
+print round(3.4)      // 3
+print min(4, 7)       // 4
+print max(4, 7)       // 7
+print min(2.5, 1.5)   // 1.5
+print max(2.5, 1.5)   // 2.5
+
+// String operations
+print upper("hello")              // HELLO
+print lower("WORLD")              // world
+print trim("  hi  ")              // hi
+print contains("hello", "ell")    // true
+print contains("hello", "xyz")    // false
+print starts_with("hello", "hel") // true
+print ends_with("hello", "llo")   // true
+print replace("hello", "l", "r")  // herro
+let parts = split("a,b,c", ",")
+print parts[0]  // a
+print parts[1]  // b
+print parts[2]  // c
+print join(["x","y","z"], "-")    // x-y-z
+
+// Array operations
+let nums = [3, 1, 4, 1, 5, 9, 2]
+let sorted = sort(nums)
+print sorted[0]   // 1
+print sorted[6]   // 9
+let rev = reverse([1, 2, 3])
+print rev[0]      // 3
+print rev[2]      // 1
+let arr = [10, 20, 30]
+let last = pop(arr)
+print last        // 30
+print arr[0]      // 10
+
+// Map operations
+let m = {"a": 1, "b": 2, "c": 3}
+let ks = keys(m)
+print len(ks)     // 3
+let vs = values(m)
+print len(vs)     // 3
+
+// Character operations
+print ord("A")    // 65
+print ord("a")    // 97
+print chr(65)     // A
+print chr(97)     // a
+
+// I/O
+println("via println")  // via println
+printn("no")
+printn("newline")
+print ""                // forces newline after the printn pair
+
+// File I/O
+writeFile("_test_tmp.txt", "hello file")
+let content = readFile("_test_tmp.txt")
+print content     // hello file
+
+// input is interactive — skip in automated test

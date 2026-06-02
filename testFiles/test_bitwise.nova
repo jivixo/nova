@@ -1,0 +1,128 @@
+// Phase 9 Part 1 — Bitwise operator stress test
+
+// --- Basic ops ---
+print(5 & 3)       // 1
+print(5 | 3)       // 7
+print(5 ^ 3)       // 6
+print(1 << 3)      // 8
+print(16 >> 2)     // 4
+
+// --- Identity laws ---
+let x = 42
+print(x & 0)       // 0
+print(x | 0)       // 42
+print(x ^ x)       // 0
+print(x ^ 0)       // 42
+
+// --- NOT via XOR with all-ones mask ---
+let mask8 = 255
+print(170 & mask8)   // 170  (0xAA = 10101010)
+print(170 ^ mask8)   // 85   (NOT of 0xAA in 8 bits)
+
+// --- Shifts ---
+print(1 << 0)      // 1
+print(1 << 7)      // 128
+print(128 >> 7)    // 1
+print(255 >> 4)    // 15
+
+// --- Ring-buffer wrap pattern (GoL-style) ---
+let width = 8
+let pos = 0
+print((pos - 1 + width) & (width - 1))  // 7  (wrap left)
+let pos2 = 7
+print((pos2 + 1) & (width - 1))         // 0  (wrap right)
+
+// --- Chaining ---
+print(15 & 10 & 12)   // 8   (1111 & 1010 & 1100 = 1000)
+print(1 | 2 | 4)      // 7   (0001 | 0010 | 0100 = 0111)
+print(10 ^ 12 ^ 6)    // 0   (1010 ^ 1100 ^ 0110 = 0)
+
+// --- Precedence: arithmetic binds tighter than bitwise ---
+print(2 + 3 & 7)       // 5   (2+3=5, 5&7=5)
+print(1 << 2 + 1)      // 8   (2+1=3, 1<<3=8)
+print(16 >> 1 + 1)     // 4   (1+1=2, 16>>2=4)
+
+// --- Precedence: bitwise tighter than comparison ---
+let val = 6
+if val & 1 == 0 {
+    print("even")     // even
+} else {
+    print("odd")
+}
+
+// --- In-loop accumulator ---
+let acc = 0
+let i = 0
+while i < 8 {
+    acc = acc | (1 << i)
+    i = i + 1
+}
+print(acc)   // 255  (all 8 bits set)
+
+// --- Bit counting (popcount via loop) ---
+fn popcount(n) {
+    let count = 0
+    let v = n
+    while v != 0 {
+        count = count + (v & 1)
+        v = v >> 1
+    }
+    count
+}
+print(popcount(0))    // 0
+print(popcount(1))    // 1
+print(popcount(255))  // 8
+print(popcount(170))  // 4  (10101010)
+
+// --- Bit flag set/clear/test ---
+let FLAGS_READ  = 1
+let FLAGS_WRITE = 2
+let FLAGS_EXEC  = 4
+
+let perms = 0
+perms = perms | FLAGS_READ | FLAGS_WRITE
+print(perms & FLAGS_READ  != 0)   // true
+print(perms & FLAGS_WRITE != 0)   // true
+print(perms & FLAGS_EXEC  != 0)   // false
+
+perms = perms & (255 ^ FLAGS_WRITE)   // clear WRITE bit
+print(perms & FLAGS_WRITE != 0)       // false
+print(perms & FLAGS_READ  != 0)       // true
+
+// --- if-else as expression (parser fix verification) ---
+let sign = if 5 > 0 { 1 } else { -1 }
+print(sign)   // 1
+
+fn classify(n) {
+    let label = if n < 0 { "neg" } else if n == 0 { "zero" } else { "pos" }
+    label
+}
+print(classify(-3))  // neg
+print(classify(0))   // zero
+print(classify(7))   // pos
+
+// if-else expression inside bitwise context
+let x2 = 15
+let masked = (if x2 > 10 { 255 } else { 0 }) & x2
+print(masked)   // 15  (255 & 15)
+
+// --- Bitwise ring-index (GoL-style wrap) ---
+fn extract_bits(row, width2) {
+    let total = 0
+    let j = 0
+    while j < width2 {
+        let li = (j - 1 + width2) & (width2 - 1)
+        let ri = (j + 1) & (width2 - 1)
+        let left   = (row >> li) & 1
+        let center = (row >> j)  & 1
+        let right  = (row >> ri) & 1
+        total = total + center
+        j = j + 1
+    }
+    total
+}
+
+let row0 = 60
+print(extract_bits(row0, 8))   // 4
+
+print("done")

@@ -1,0 +1,80 @@
+// ========================================
+// LAYER 1 — Copy-on-Write tests
+// ========================================
+
+// ----------------------------------------
+// 1. Basic CoW — mutating b should not affect a
+// ----------------------------------------
+print "--- basic cow ---"
+let a = [1, 2, 3]
+let b = a
+b[0] = 99
+print a[0]   // 1  (a is unchanged)
+print b[0]   // 99 (b has its own copy)
+
+// ----------------------------------------
+// 2. Read sharing — reading b should see a's values
+// ----------------------------------------
+print ""
+print "--- read sharing ---"
+let x = [10, 20, 30]
+let y = x
+print y[0]   // 10
+print y[1]   // 20
+print y[2]   // 30
+
+// ----------------------------------------
+// 3. Multiple aliases — mutating one does not affect others
+// ----------------------------------------
+print ""
+print "--- multiple aliases ---"
+let orig = [1, 2, 3]
+let copy1 = orig
+let copy2 = orig
+copy1[0] = 100
+copy2[1] = 200
+print orig[0]   // 1   (untouched)
+print orig[1]   // 2   (untouched)
+print copy1[0]  // 100
+print copy2[1]  // 200
+
+// ----------------------------------------
+// 4. CoW inside a function — passing array should not mutate caller's copy
+// ----------------------------------------
+print ""
+print "--- function isolation ---"
+fn zero_first(arr) {
+    arr[0] = 0
+    arr
+}
+let data = [5, 6, 7]
+let result = zero_first(data)
+print data[0]    // 5   (caller untouched)
+print result[0]  // 0   (function's copy was mutated)
+
+// ----------------------------------------
+// 5. Hashmap CoW — same semantics for maps
+// ----------------------------------------
+print ""
+print "--- hashmap cow ---"
+let m1 = {"x": 1, "y": 2}
+let m2 = m1
+m2 = setKey(m2, "x", 99)
+print m1["x"]   // 1  (m1 untouched)
+print m2["x"]   // 99
+
+// ----------------------------------------
+// 6. Chain of assignments
+// ----------------------------------------
+print ""
+print "--- chain ---"
+let p = [1, 2, 3]
+let q = p
+let r = q
+r[2] = 999
+print p[2]   // 3
+print q[2]   // 3
+print r[2]   // 999
+
+print ""
+print "ALL COW TESTS PASSED"

@@ -1,0 +1,95 @@
+// Phase 10 Part 2 — channel primitive stress test
+// single-threaded: verify channel semantics before adding threads
+
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── basic send/recv ───────────────────────────────────────────────────────────
+let ch = channel()
+send(ch, 42)
+check("recv int", recv(ch), 42)
+
+send(ch, "hello")
+check("recv string", recv(ch), "hello")
+
+send(ch, true)
+check("recv bool", recv(ch), true)
+
+send(ch, nil)
+check("recv nil", recv(ch), nil)
+
+// ── deep clone on send ────────────────────────────────────────────────────────
+let arr = [1, 2, 3]
+send(ch, arr)
+push(arr, 99)
+let received = recv(ch)
+check("send deep-clones array length", len(received), 3)
+check("send deep-clones array value", received[2], 3)
+
+// ── multiple values queued ────────────────────────────────────────────────────
+send(ch, 10)
+send(ch, 20)
+send(ch, 30)
+check("queue order 1", recv(ch), 10)
+check("queue order 2", recv(ch), 20)
+check("queue order 3", recv(ch), 30)
+
+// ── tryRecv on empty channel returns nil ──────────────────────────────────────
+let empty = channel()
+check("tryRecv empty returns nil", tryRecv(empty), nil)
+
+// ── tryRecv gets value when present ──────────────────────────────────────────
+send(empty, 777)
+check("tryRecv gets queued value", tryRecv(empty), 777)
+
+// ── channel as first-class value in array ────────────────────────────────────
+let channels = [channel(), channel(), channel()]
+send(channels[0], "a")
+send(channels[1], "b")
+send(channels[2], "c")
+check("channel in array 0", recv(channels[0]), "a")
+check("channel in array 1", recv(channels[1]), "b")
+check("channel in array 2", recv(channels[2]), "c")
+
+// ── channel sharing via alias ─────────────────────────────────────────────────
+let shared = channel()
+let alias = shared
+send(alias, "from alias")
+check("aliased channel shares queue", recv(shared), "from alias")
+
+// ── struct deep clone through channel ────────────────────────────────────────
+struct Point { x, y }
+let p = Point { x: 10, y: 20 }
+send(ch, p)
+let p2 = recv(ch)
+p2.x = 99
+check("struct send: original unmodified", p.x, 10)
+check("struct send: received copy is independent", p2.x, 99)
+
+// ── pipeline: value flows through a chain of channels ────────────────────────
+let c1 = channel()
+let c2 = channel()
+let c3 = channel()
+send(c1, 5)
+let x = recv(c1)
+send(c2, x * 2)
+let y = recv(c2)
+send(c3, y + 1)
+check("pipeline 5->*2->+1", recv(c3), 11)
+
+// ── type() and str() on channel ───────────────────────────────────────────────
+check("type() of channel", type(ch), "channel")
+check("str() of channel", str(ch), "<channel>")
+
+// ── close() does not crash ────────────────────────────────────────────────────
+let disposable = channel()
+send(disposable, 1)
+close(disposable)
+print("ok: close() does not crash")
+
+println("all channel tests passed")

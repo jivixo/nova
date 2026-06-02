@@ -1,0 +1,75 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── basic: mutex holds and returns a value ─────────────────────────────────────
+let m = mutex(0)
+let v = lock(m)
+check("initial value", v, 0)
+unlock(m, 42)
+let v2 = lock(m)
+check("updated value", v2, 42)
+unlock(m, v2)
+
+// ── type check ─────────────────────────────────────────────────────────────────
+check("type is mutex", type(m), "mutex")
+
+// ── withLock: transforms the held value atomically ────────────────────────────
+let counter = mutex(0)
+withLock(counter, (n) -> n + 1)
+withLock(counter, (n) -> n + 1)
+withLock(counter, (n) -> n + 1)
+let final_count = lock(counter)
+check("withLock increments 3 times", final_count, 3)
+unlock(counter, final_count)
+
+// ── withLock returns the new value ────────────────────────────────────────────
+let bank = mutex(100)
+let after = withLock(bank, (bal) -> bal - 30)
+check("withLock return value", after, 70)
+let bal = lock(bank)
+check("mutex holds updated balance", bal, 70)
+unlock(bank, bal)
+
+// ── mutex with string value ────────────────────────────────────────────────────
+let msg = mutex("hello")
+let s = lock(msg)
+check("string mutex initial", s, "hello")
+unlock(msg, s + " world")
+let s2 = lock(msg)
+check("string mutex updated", s2, "hello world")
+unlock(msg, s2)
+
+// ── mutex with array value ─────────────────────────────────────────────────────
+let log = mutex([])
+withLock(log, (arr) -> push(arr, "a"))
+withLock(log, (arr) -> push(arr, "b"))
+withLock(log, (arr) -> push(arr, "c"))
+let entries = lock(log)
+check("mutex array len", len(entries), 3)
+check("mutex array[0]", entries[0], "a")
+check("mutex array[2]", entries[2], "c")
+unlock(log, entries)
+
+// ── concurrent mutation: two spawned tasks both increment the counter ──────────
+let shared = mutex(0)
+fn bump(m) {
+    let i = 0
+    while i < 50 {
+        withLock(m, (n) -> n + 1)
+        let i = i + 1
+    }
+}
+let t1 = spawn bump(shared)
+let t2 = spawn bump(shared)
+wait(t1)
+wait(t2)
+let result = lock(shared)
+check("concurrent increments = 100", result, 100)
+unlock(shared, result)
+
+println("all mutex tests passed")

@@ -1,0 +1,68 @@
+// Item 3: impl blocks + method calls in LLVM backend
+
+struct Point {
+    x,
+    y,
+}
+
+impl Point {
+    fn distance(self) {
+        let dx = self.x * self.x
+        let dy = self.y * self.y
+        dx + dy
+    }
+
+    fn translate(self, dx, dy) {
+        let nx = self.x + dx
+        let ny = self.y + dy
+        Point { x: nx, y: ny }
+    }
+
+    fn scale(self, factor) {
+        Point { x: self.x * factor, y: self.y * factor }
+    }
+}
+
+let p = Point { x: 3, y: 4 }
+print p.distance()       // 9+16 = 25
+
+let p2 = p.translate(1, 2)
+print p2.x               // 4
+print p2.y               // 6
+
+let p3 = p.scale(2)
+print p3.x               // 6
+print p3.y               // 8
+
+// Method in a function
+fn make_and_measure(x, y) {
+    let pt = Point { x: x, y: y }
+    pt.distance()
+}
+print make_and_measure(5, 12)   // 25+144 = 169
+
+// Chained method calls
+let p4 = Point { x: 0, y: 0 }
+let p5 = p4.translate(3, 3)
+print p5.distance()      // 9+9 = 18
+
+// Struct with a counter method
+struct Counter {
+    n,
+}
+
+impl Counter {
+    fn value(self) {
+        self.n
+    }
+
+    fn add(self, x) {
+        Counter { n: self.n + x }
+    }
+}
+
+let c = Counter { n: 10 }
+print c.value()          // 10
+let c2 = c.add(5)
+print c2.value()         // 15
+print c.value()          // 10 (original unchanged)

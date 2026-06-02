@@ -1,0 +1,106 @@
+// test_phase9_final.nova — tests for Phase 9 final fixes:
+//   1. Methods on enums
+//   2. String iteration
+// Run both:
+//   nova run test_phase9_final.nova
+//   nova run --tree test_phase9_final.nova
+
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── Methods on enums ──────────────────────────────────────────────────────────
+
+enum Direction { North, South, East, West }
+
+impl Direction {
+    fn opposite(self) {
+        if self == Direction.North { Direction.South }
+        else if self == Direction.South { Direction.North }
+        else if self == Direction.East { Direction.West }
+        else { Direction.East }
+    }
+
+    fn to_str(self) {
+        if self == Direction.North { "North" }
+        else if self == Direction.South { "South" }
+        else if self == Direction.East { "East" }
+        else { "West" }
+    }
+
+    fn is_horizontal(self) {
+        self == Direction.East || self == Direction.West
+    }
+}
+
+let d = Direction.North
+check("enum method to_str", d.to_str(), "North")
+check("enum method opposite North->South", d.opposite() == Direction.South, true)
+check("enum method opposite South->North", Direction.South.opposite() == Direction.North, true)
+check("enum method opposite East->West", Direction.East.opposite() == Direction.West, true)
+check("enum method is_horizontal North", Direction.North.is_horizontal(), false)
+check("enum method is_horizontal East", Direction.East.is_horizontal(), true)
+
+enum Shape { Circle(r), Rect(w, h) }
+
+impl Shape {
+    fn label(self) {
+        match self {
+            Shape.Circle(r) => "circle"
+            Shape.Rect(w, h) => "rect"
+        }
+    }
+}
+
+let s = Shape.Circle(5)
+check("enum payload method label circle", s.label(), "circle")
+check("enum payload method label rect", Shape.Rect(3, 4).label(), "rect")
+
+// ── String iteration ──────────────────────────────────────────────────────────
+
+let result = ""
+for ch in "hello" {
+    result = result + ch
+}
+check("for ch in string concat", result, "hello")
+
+let count = 0
+for ch in "nova" {
+    count = count + 1
+}
+check("for ch in string count", count, 4)
+
+let upper_result = ""
+for ch in "abc" {
+    upper_result = upper_result + upper(ch)
+}
+check("for ch in string upper", upper_result, "ABC")
+
+let vowels = 0
+for ch in "hello world" {
+    if ch == "a" || ch == "e" || ch == "i" || ch == "o" || ch == "u" {
+        vowels = vowels + 1
+    }
+}
+check("for ch count vowels", vowels, 3)
+
+// empty string — loop body should never run
+let ran = false
+for ch in "" {
+    ran = true
+}
+check("for ch in empty string", ran, false)
+
+// string iteration with break
+let first = ""
+for ch in "hello" {
+    first = ch
+    break
+}
+check("for ch in string break", first, "h")
+
+print("done")

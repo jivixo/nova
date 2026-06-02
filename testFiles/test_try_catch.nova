@@ -1,0 +1,74 @@
+// try / catch / throw
+
+// basic throw and catch
+try {
+    throw "oops"
+    print "unreachable"
+} catch e {
+    print e
+}
+// oops
+
+// catch with int
+try {
+    throw 42
+} catch e {
+    print e
+}
+// 42
+
+// no throw — catch block skipped
+try {
+    print "safe"
+} catch e {
+    print "should not print"
+}
+// safe
+
+// throw from inside a function
+fn might_throw(x) {
+    if x < 0 {
+        throw "negative"
+    }
+    x * 2
+}
+
+try {
+    let r = might_throw(5)
+    print r
+} catch e {
+    print "caught from fn"
+}
+// 10
+
+try {
+    let r = might_throw(-1)
+    print r
+} catch e {
+    print e
+}
+// negative
+
+// re-throw is not supported yet, but multiple independent try blocks work
+try {
+    throw "first"
+} catch e {
+    print e
+}
+try {
+    throw "second"
+} catch e {
+    print e
+}
+// first
+// second
+
+// throw with any value type
+try {
+    throw true
+} catch e {
+    print e
+}
+// true
+
+print "done"

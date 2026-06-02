@@ -1,0 +1,27 @@
+// test_item2.nova — verify arithmetic still works after error-message change
+// (Error messages now show type names like "int and array" instead of values.)
+// This file is a regression check — we can't assert error message text from Nova
+// without try/catch-as-expression, so we just verify correct paths still produce
+// correct results.
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+check("int + int",     2 + 3,       5)
+check("float + float", 1.5 + 2.5,   4.0)
+check("int + float",   2 + 0.5,     2.5)
+check("str + str",     "a" + "b",   "ab")
+check("int - int",     10 - 3,      7)
+check("int * int",     4 * 5,       20)
+check("int / int",     7 / 2,       3.5)
+check("int % int",     10 % 3,      1)
+check("int < int",     3 < 5,       true)
+check("int > int",     5 > 3,       true)
+check("int <= int",    3 <= 3,      true)
+check("int >= int",    4 >= 5,      false)
+
+print("done")

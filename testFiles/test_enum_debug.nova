@@ -1,0 +1,11 @@
+enum Wrapper { Val(data) }
+let w = Wrapper.Val([1, 2, 3])
+
+match w {
+    Wrapper.Val(d) => {
+        print("matched!")
+        print("d = " + str(d))
+        print("len = " + str(len(d)))
+    }
+    _ => print("no match")
+}

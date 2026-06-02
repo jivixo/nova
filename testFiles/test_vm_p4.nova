@@ -1,0 +1,68 @@
+// Phase 8 Part 4 — VM user-defined functions test
+
+// ── 1. basic function ────────────────────────────────────────────
+fn double(x) { return x * 2 }
+print double(5)     // 10
+print double(21)    // 42
+
+// ── 2. multiple params ───────────────────────────────────────────
+fn add(a, b) { return a + b }
+print add(3, 4)     // 7
+print add(10, 32)   // 42
+
+// ── 3. implicit nil return ───────────────────────────────────────
+fn nothing() { let x = 1 }
+print nothing()     // nil
+
+// ── 4. locals don't leak ─────────────────────────────────────────
+fn local_test() {
+    let secret = 99
+    return secret
+}
+print local_test()  // 99
+// secret is not accessible here (would panic if printed)
+
+// ── 5. function reads global ─────────────────────────────────────
+let g = 100
+fn read_global() { return g }
+print read_global() // 100
+
+// ── 6. recursion ─────────────────────────────────────────────────
+fn fact(n) {
+    if n <= 1 { return 1 }
+    return n * fact(n - 1)
+}
+print fact(1)   // 1
+print fact(5)   // 120
+print fact(10)  // 3628800
+
+// ── 7. fibonacci recursive ───────────────────────────────────────
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+print fib(0)    // 0
+print fib(1)    // 1
+print fib(10)   // 55
+
+// ── 8. function using built-ins ──────────────────────────────────
+fn greet(name) {
+    return "Hello, " + upper(name) + "!"
+}
+print greet("nova")     // Hello, NOVA!
+print greet("world")    // Hello, WORLD!
+
+// ── 9. function with local loop ──────────────────────────────────
+fn sum_to(n) {
+    let total = 0
+    for i in 1..n+1 { total = total + i }
+    return total
+}
+print sum_to(10)    // 55
+print sum_to(100)   // 5050
+
+// ── 10. mutual independence ──────────────────────────────────────
+fn square(x) { return x * x }
+fn cube(x)   { return x * square(x) }
+print square(4)     // 16
+print cube(3)       // 27

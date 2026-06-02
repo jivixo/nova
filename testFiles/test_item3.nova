@@ -1,0 +1,48 @@
+// test_item3.nova — let x inside fn must NOT overwrite outer-scope x
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// simple case: global x must survive fn that re-declares x locally
+let x = 10
+fn shadow_x() {
+    let x = 99
+    x
+}
+check("shadow returns local",   shadow_x(), 99)
+check("global x unchanged",     x,          10)
+
+// mutation of global via assignment (NOT let) must still write back
+let counter = 0
+fn increment() {
+    counter = counter + 1
+}
+increment()
+increment()
+check("global counter mutated", counter, 2)
+
+// let inside a nested fn must not leak to outer fn's local
+fn outer() {
+    let y = 5
+    fn inner() {
+        let y = 999
+    }
+    inner()
+    y
+}
+check("outer y unaffected by inner let", outer(), 5)
+
+// let with same name as a param must not clobber outer scope
+let z = 42
+fn use_param(z) {
+    let z = z + 1
+    z
+}
+check("param + let in fn",  use_param(10), 11)
+check("outer z unchanged",  z,             42)
+
+print("done")

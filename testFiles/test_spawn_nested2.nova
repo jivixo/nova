@@ -1,0 +1,27 @@
+// Test: nested loops inside spawned function — does the write fail?
+
+fn fill_2d(arr, w, start_y, end_y) {
+    let y = start_y
+    while y < end_y {
+        let x = 0
+        while x < w {
+            arr[y * w + x] = y * w + x + 1
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+fn run_nested(arr, w, h) {
+    let hnd = spawn fill_2d(arr, w, 0, h)
+    wait(hnd)
+    0
+}
+
+let w = 3
+let h = 3
+let a = make_array(w * h, 0)
+run_nested(a, w, h)
+println("a[0]=" + str(a[0]) + " a[4]=" + str(a[4]) + " a[8]=" + str(a[8]))
+// expect: 1 5 9

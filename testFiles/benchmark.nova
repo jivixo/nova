@@ -1,0 +1,55 @@
+// ========================================
+// NOVA BENCHMARK
+// ========================================
+
+// 1. Recursive fibonacci — stress tests function calls and recursion
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+let r1 = fib(28)
+print "fib(28) = {r1}"
+
+// 2. Loop — 100,000 iterations of arithmetic
+let sum = 0
+let i = 0
+while i < 100000 {
+    sum += i
+    i += 1
+}
+print "loop sum = {sum}"
+
+// 3. Array ops — build, sort, filter, map on 1000 elements
+let arr = []
+let j = 0
+while j < 1000 {
+    let arr = push(arr, 1000 - j)
+    j += 1
+}
+let arr = sort(arr)
+let arr = filter(arr, (x) -> x % 2 == 0)
+let arr = map(arr, (x) -> x * 2)
+print "array len = {len(arr)}"
+print "array sum = {sum(arr)}"
+
+// 4. String ops — 1000 string builds and manipulations
+let k = 0
+let last = ""
+while k < 1000 {
+    let s = "hello {k}"
+    let s = upper(s)
+    let last = s
+    k += 1
+}
+print "last string = {last}"
+
+// 5. HashMap ops — 500 map insertions and lookups
+let m = {}
+let n = 0
+while n < 500 {
+    let m = setKey(m, str(n), n * 2)
+    n += 1
+}
+print "map size = {len(keys(m))}"
+
+print "done"

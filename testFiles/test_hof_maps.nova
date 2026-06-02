@@ -1,0 +1,238 @@
+// Combined stress test: hashmap edge cases + higher-order functions
+
+// ── 1. MISSING KEY BEHAVIOUR ─────────────────────────────────────
+print "--- missing keys ---"
+let m = {"a": 1, "b": 2}
+print m["c"]               // nil
+print m["c"] ?? 99         // 99
+print m["a"] ?? 99         // 1  (non-nil left side — returns left)
+print hasKey(m, "a")       // true
+print hasKey(m, "z")       // false
+
+// ── 2. SETKEY / DELETE / MERGE ────────────────────────────────────
+print "--- setKey / delete / merge ---"
+let m = setKey(m, "c", 3)
+print m["c"]               // 3
+print hasKey(m, "c")       // true
+let m = delete(m, "b")
+print hasKey(m, "b")       // false
+print len(keys(m))         // 2  (a and c remain)
+
+let base  = {"x": 1, "y": 2}
+let extra = {"y": 99, "z": 3}
+let merged = mergeMap(base, extra)
+print merged["x"]          // 1
+print merged["y"]          // 99  (extra overwrites base)
+print merged["z"]          // 3
+print len(keys(merged))    // 3
+
+// ── 3. DYNAMIC KEYS ───────────────────────────────────────────────
+print "--- dynamic keys ---"
+let key = "score"
+let rec = setKey({}, key, 42)
+print rec[key]             // 42
+print rec["score"]         // 42
+
+// key from expression
+let prefix = "item"
+let idx    = 2
+let k      = "{prefix}{idx}"
+let rec    = setKey(rec, k, "hello")
+print rec["item2"]         // hello
+
+// ── 4. NESTED HASHMAPS ────────────────────────────────────────────
+print "--- nested hashmaps ---"
+let person = {
+    "name": "Alice",
+    "address": {"city": "NY", "zip": "10001"},
+    "scores": [95, 87, 91]
+}
+print person["name"]                    // Alice
+print person["address"]["city"]         // NY
+print person["address"]["zip"]          // 10001
+print person["scores"][1]              // 87
+
+// mutate nested array
+let updated = person["scores"]
+let updated = push(updated, 100)
+let person  = setKey(person, "scores", updated)
+print len(person["scores"])            // 4
+print person["scores"][3]              // 100
+
+// ── 5. ARRAY OF HASHMAPS ─────────────────────────────────────────
+print "--- array of hashmaps ---"
+let records = [
+    {"name": "Alice", "score": 90},
+    {"name": "Bob",   "score": 75},
+    {"name": "Carol", "score": 85}
+]
+print records[0]["name"]               // Alice
+print records[2]["score"]              // 85
+
+// extract all names using map
+let names = map(records, (r) -> r["name"])
+print names                            // [Alice, Bob, Carol]
+
+// filter by score
+let passing = filter(records, (r) -> r["score"] >= 80)
+print len(passing)                     // 2
+
+// sum of scores
+let total = reduce(records, 0, (acc, r) -> acc + r["score"])
+print total                            // 250
+
+// highest scorer
+let best = reduce(records, records[0], (best, r) -> {
+    if r["score"] > best["score"] { r } else { best }
+})
+print best["name"]                     // Alice
+
+// ── 6. EMPTY ARRAY HOF ───────────────────────────────────────────
+print "--- empty array HOF ---"
+print map([], (x) -> x * 2)            // []
+print filter([], (x) -> x > 0)         // []
+print reduce([], 0, (a, x) -> a + x)   // 0
+print any([], (x) -> x > 0)            // false
+print all([], (x) -> x > 0)            // true  (vacuously true)
+print count([], (x) -> x > 0)          // 0
+print find([], (x) -> x > 0)           // nil
+print contains([], 1)                  // false
+print sum([])                          // 0
+print product([])                      // 1  (identity for multiplication)
+
+// ── 7. SINGLE-ELEMENT ARRAY HOF ──────────────────────────────────
+print "--- single-element HOF ---"
+print map([7], (x) -> x * 2)          // [14]
+print filter([7], (x) -> x > 5)       // [7]
+print filter([7], (x) -> x > 10)      // []
+print reduce([7], 0, (a, x) -> a + x) // 7
+print any([7], (x) -> x > 5)          // true
+print all([7], (x) -> x > 5)          // true
+print find([7], (x) -> x > 5)         // 7
+print find([7], (x) -> x > 10)        // nil
+
+// ── 8. CHAINED HOF ───────────────────────────────────────────────
+print "--- chained HOF ---"
+let nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// sum of squares of even numbers
+let result = nums
+    |> filter((x) -> x % 2 == 0)
+    |> map((x) -> x * x)
+    |> reduce(0, (a, x) -> a + x)
+print result                           // 220  (4+16+36+64+100)
+
+// first odd number greater than 5
+let found = nums |> filter((x) -> x % 2 != 0) |> find((x) -> x > 5)
+print found                            // 7
+
+// count of multiples of 3
+let c = count(nums, (x) -> x % 3 == 0)
+print c                                // 3  (3, 6, 9)
+
+// ── 9. HOF WITH CLOSURES ─────────────────────────────────────────
+print "--- HOF with closures ---"
+fn make_multiplier(n) { (x) -> x * n }
+fn make_gt(threshold) { (x) -> x > threshold }
+
+let double = make_multiplier(2)
+let triple = make_multiplier(3)
+let gt5    = make_gt(5)
+
+print map([1, 2, 3], double)           // [2, 4, 6]
+print map([1, 2, 3], triple)           // [3, 6, 9]
+print filter([3, 6, 9], gt5)           // [6, 9]
+
+// compose two HOF operations using closures
+fn compose_map_filter(arr, transform, predicate) {
+    filter(map(arr, transform), predicate)
+}
+print compose_map_filter([1,2,3,4,5], double, gt5)   // [6, 8, 10]
+
+// ── 10. HOF WITH SORT ────────────────────────────────────────────
+print "--- sort edge cases ---"
+print sort([])                         // []
+print sort([1])                        // [1]
+print sort([3, 1, 2])                  // [1, 2, 3]
+print sort([3, 1, 2, 1, 3])           // [1, 1, 2, 3, 3]  (stable duplicates)
+print sort(["banana", "apple", "cherry"])  // [apple, banana, cherry]
+print reverse(sort([3, 1, 2]))         // [3, 2, 1]  (descending)
+
+// sort records by score using reduce-based approach
+fn sort_by_score(records) {
+    let sorted = []
+    for r in records {
+        let inserted = false
+        let new_sorted = []
+        for s in sorted {
+            if !inserted && r["score"] > s["score"] {
+                let new_sorted = push(new_sorted, r)
+                let inserted = true
+            }
+            let new_sorted = push(new_sorted, s)
+        }
+        if !inserted { let new_sorted = push(new_sorted, r) }
+        let sorted = new_sorted
+    }
+    sorted
+}
+let ranked = sort_by_score(records)
+print ranked[0]["name"]                // Alice (score 90)
+print ranked[1]["name"]                // Carol (score 85)
+print ranked[2]["name"]                // Bob   (score 75)
+
+// ── 11. HOF RETURNING FUNCTIONS ──────────────────────────────────
+print "--- HOF returning functions ---"
+fn apply_twice(f) { (x) -> f(f(x)) }
+
+let quad   = apply_twice((x) -> x * 2)
+let add4   = apply_twice((x) -> x + 2)
+
+print quad(3)                          // 12  (3*2=6, 6*2=12)
+print add4(10)                         // 14  (10+2=12, 12+2=14)
+
+// map with a function that returns a function
+let adders = map([1, 2, 3], (n) -> make_multiplier(n))
+print adders[0](10)                    // 10  (multiply by 1)
+print adders[1](10)                    // 20  (multiply by 2)
+print adders[2](10)                    // 30  (multiply by 3)
+
+// ── 12. HOF ERROR CASES ──────────────────────────────────────────
+print "--- HOF error cases ---"
+// find returning nil when nothing matches
+let nothing = find([1, 2, 3], (x) -> x > 100)
+print nothing                          // nil
+print nothing ?? "not found"          // not found
+
+// reduce on single element never calls the function
+let single_reduce = reduce([42], 0, (a, x) -> a + x)
+print single_reduce                    // 42
+
+// contains with various types
+print contains([1, "two", true, nil], "two")   // true
+print contains([1, "two", true, nil], nil)     // true
+print contains([1, "two", true, nil], false)   // false
+
+// ── 13. HASHMAP AS ACCUMULATOR ───────────────────────────────────
+print "--- hashmap as accumulator ---"
+// frequency count using reduce
+let words = ["apple", "banana", "apple", "cherry", "banana", "apple"]
+let freq = reduce(words, {}, (acc, w) -> {
+    let current = acc[w] ?? 0
+    setKey(acc, w, current + 1)
+})
+print freq["apple"]    // 3
+print freq["banana"]   // 2
+print freq["cherry"]   // 1
+
+// group by first letter using reduce
+let items = ["ant", "bee", "cat", "bear", "crow", "alligator"]
+let groups = reduce(items, {}, (acc, item) -> {
+    let letter = substr(item, 0, 1)
+    let group  = acc[letter] ?? []
+    let group  = push(group, item)
+    setKey(acc, letter, group)
+})
+print groups["a"]    // [ant, alligator]
+print groups["b"]    // [bee, bear]
+print groups["c"]    // [cat, crow]

@@ -1,0 +1,181 @@
+// test_stress_arith.nova — numeric edge cases, type mixing, precision, overflow
+
+fn assert(label, got, expected) {
+    if got == expected {
+        print "ok: {label}"
+    } else {
+        print "FAIL: {label} — got {got}, expected {expected}"
+    }
+}
+fn assert_near(label, got, expected, eps) {
+    let diff = abs(got - expected)
+    if diff <= eps {
+        print "ok: {label}"
+    } else {
+        print "FAIL: {label} — got {got}, expected ~{expected}"
+    }
+}
+
+// ── 1. integer arithmetic ────────────────────────────────────────────────
+print "--- 1. integer arithmetic ---"
+assert("2+2", 2+2, 4)
+assert("100-37", 100-37, 63)
+assert("7*8", 7*8, 56)
+assert_near("17/3", 17/3, 5.666666666666667, 0.000000001)
+assert("17%3", 17%3, 2)
+assert("-7/2", -7/2, -3.5)
+assert("-7%2", -7%2, -1)
+assert("0*999", 0*999, 0)
+assert("1*1*1*1", 1*1*1*1, 1)
+
+// ── 2. float arithmetic ──────────────────────────────────────────────────
+print "--- 2. float arithmetic ---"
+assert_near("0.1+0.2", 0.1+0.2, 0.3, 0.0000001)
+assert("1.5*2.0", 1.5*2.0, 3.0)
+assert("10.0/4.0", 10.0/4.0, 2.5)
+assert_near("1.0/3.0", 1.0/3.0, 0.333333333, 0.000000001)
+assert("0.0+0.0", 0.0+0.0, 0.0)
+assert("-1.5*-2.0", -1.5*-2.0, 3.0)
+
+// ── 3. mixed int/float ───────────────────────────────────────────────────
+print "--- 3. mixed int/float ---"
+assert("1 + 1.5", 1 + 1.5, 2.5)
+assert("2.0 * 3", 2.0 * 3, 6.0)
+assert("5 / 2.0", 5 / 2.0, 2.5)
+assert("7 - 1.0", 7 - 1.0, 6.0)
+assert("type(1+1.0)", type(1+1.0), "float")
+assert("type(4/2)", type(4/2), "float")
+
+// ── 4. bool in arithmetic ────────────────────────────────────────────────
+print "--- 4. bool in arithmetic ---"
+assert("true + true", true + true, 2)
+assert("false + 1", false + 1, 1)
+assert("true * 5", true * 5, 5)
+assert("false * 99", false * 99, 0)
+assert("int(true)", int(true), 1)
+assert("int(false)", int(false), 0)
+
+// ── 5. division by zero throws ───────────────────────────────────────────
+print "--- 5. division by zero ---"
+try {
+    let x = 1 / 0
+    print "FAIL: int div/0 should throw"
+} catch e {
+    print "ok: int div/0 caught: {e}"
+}
+try {
+    let x = 1.0 / 0.0
+    // float div by zero → Infinity in IEEE 754; may or may not throw
+    print "ok: float div/0 gave {x}"
+} catch e {
+    print "ok: float div/0 caught: {e}"
+}
+try {
+    let x = 0 / 0
+    print "FAIL: 0/0 should throw"
+} catch e {
+    print "ok: 0/0 caught: {e}"
+}
+
+// ── 6. operator precedence ───────────────────────────────────────────────
+print "--- 6. precedence ---"
+assert("2+3*4", 2+3*4, 14)          // * before +
+assert("10-2-3", 10-2-3, 5)         // left-assoc
+assert("2*3+4*5", 2*3+4*5, 26)
+assert("8/2/2", 8/2/2, 2)           // left-assoc
+assert("2^0", 2*1, 2)               // no ^ in Nova; just checking
+assert("-(3+4)", -(3+4), -7)
+assert("not true or false", ((!true) || false), false)
+assert("not (true or false)", !(true || false), false)
+assert("1+2 == 3", 1+2 == 3, true)
+assert("1 == 1+1-1", 1 == 1+1-1, true)
+
+// ── 7. comparison chains ─────────────────────────────────────────────────
+print "--- 7. comparisons ---"
+assert("1 < 2", 1 < 2, true)
+assert("2 <= 2", 2 <= 2, true)
+assert("3 > 3", 3 > 3, false)
+assert("3 >= 3", 3 >= 3, true)
+assert("1 != 2", 1 != 2, true)
+assert("0 == 0.0", 0 == 0.0, true)
+assert("1 == 1.0", 1 == 1.0, true)
+assert("1 == true", 1 == true, false)   // Nova does not coerce bool/int in ==
+assert("0 == false", 0 == false, false)
+
+// ── 8. math builtins edge cases ──────────────────────────────────────────
+print "--- 8. math edge cases ---"
+assert("abs(0)", abs(0), 0)
+assert("abs(-0)", abs(0), 0)
+assert("floor(0.0)", floor(0.0), 0)
+assert("ceil(0.0)", ceil(0.0), 0)
+assert("floor(-0.5)", floor(-0.5), -1)
+assert("ceil(-0.5)", ceil(-0.5), 0)
+assert("floor(-1.9)", floor(-1.9), -2)
+assert("ceil(-1.1)", ceil(-1.1), -1)
+assert_near("sqrt(0)", sqrt(0), 0.0, 0.0001)
+assert_near("sqrt(1)", sqrt(1), 1.0, 0.0001)
+assert_near("sqrt(4)", sqrt(4), 2.0, 0.0001)
+assert_near("sqrt(2)", sqrt(2), 1.41421356, 0.0000001)
+
+// sqrt of negative: should throw or return NaN
+try {
+    let s = sqrt(-1)
+    print "ok: sqrt(-1) = {s}"   // NaN is acceptable
+} catch e {
+    print "ok: sqrt(-1) threw: {e}"
+}
+
+// ── 9. large numbers ─────────────────────────────────────────────────────
+print "--- 9. large numbers ---"
+let big = 1000000000
+assert("big * 2", big * 2, 2000000000)
+assert("big * big", big * big, 1000000000000000000)
+let neg_big = -999999999
+assert("neg_big + big", neg_big + big, 1)
+assert_near("sqrt(big)", sqrt(float(big)), 31622.776, 0.001)
+
+// ── 10. modulo edge cases ────────────────────────────────────────────────
+print "--- 10. modulo ---"
+assert("10 % 3", 10 % 3, 1)
+assert("10 % 10", 10 % 10, 0)
+assert("10 % 1", 10 % 1, 0)
+assert("0 % 5", 0 % 5, 0)
+assert("-10 % 3", -10 % 3, -1)   // sign follows dividend (Rust behavior)
+
+// ── 11. int/float conversion ─────────────────────────────────────────────
+print "--- 11. conversions ---"
+assert("int(3.9)", int(3.9), 3)
+assert("int(-3.9)", int(-3.9), -3)   // truncates toward zero
+assert("int(0.0)", int(0.0), 0)
+assert("float(3)", float(3), 3.0)
+assert("float(-1)", float(-1), -1.0)
+assert("round(3.4)", round(3.4, 0), 3.0)
+assert("round(3.5)", round(3.5, 0), 4.0)
+assert("round(-3.5)", round(-3.5, 0), -4.0)
+assert("round(2.567, 2)", round(2.567, 2), 2.57)
+
+// ── 12. chained arithmetic stress ────────────────────────────────────────
+print "--- 12. chained arithmetic ---"
+let acc = 0
+for i in 1..101 {
+    acc = acc + i
+}
+assert("sum 1..100", acc, 5050)
+
+let product = 1
+for i in 1..13 {
+    product = product * i
+}
+assert("12!", product, 479001600)
+
+let alternating = 0
+for i in 0..10 {
+    if i % 2 == 0 {
+        alternating = alternating + i
+    } else {
+        alternating = alternating - i
+    }
+}
+assert("alternating sum 0..9", alternating, -5)  // 0-1+2-3+4-5+6-7+8-9 = -5
+
+print "done"

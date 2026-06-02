@@ -1,0 +1,17 @@
+// This file should produce:
+//   1. An unused-variable warning for "unused_var"
+//   2. A type error for returning a string from an int-annotated function
+// Both modes (VM and --tree) should print the same warnings/errors.
+
+let used_var = 10
+let unused_var = 99     // warning: unused
+
+fn add(a, b) -> int {
+    return a + b        // fine
+}
+
+fn broken() -> int {
+    return "oops"       // type error: string returned from int function
+}
+
+print add(used_var, 5)

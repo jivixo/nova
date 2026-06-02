@@ -1,0 +1,78 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// counter — mutations persist across calls
+fn make_counter() {
+    let n = 0;
+    () -> {
+        n = n + 1
+        n
+    }
+}
+let c = make_counter()
+check("counter call 1", c(), 1)
+check("counter call 2", c(), 2)
+check("counter call 3", c(), 3)
+
+// two independent counters don't share state
+let c1 = make_counter()
+let c2 = make_counter()
+c1(); c1()
+check("independent counter c1", c1(), 3)
+check("independent counter c2", c2(), 1)
+
+// accumulator — builds up a sum
+fn make_accumulator() {
+    let total = 0;
+    (x) -> {
+        total = total + x
+        total
+    }
+}
+let acc = make_accumulator()
+check("accumulator 10", acc(10), 10)
+check("accumulator 5",  acc(5),  15)
+check("accumulator 20", acc(20), 35)
+
+// memoize — cache persists across calls
+fn memoize(f: (int) -> int) {
+    let cache = {};
+    (x) -> {
+        let key = str(x)
+        if hasKey(cache, key) {
+            cache[key]
+        } else {
+            let result = f(x)
+            cache = setKey(cache, key, result)
+            result
+        }
+    }
+}
+
+let memo_sq = memoize((n) -> n * n)
+check("memo first call 4",  memo_sq(4), 16)
+check("memo second call 4", memo_sq(4), 16)
+check("memo first call 7",  memo_sq(7), 49)
+check("memo second call 7", memo_sq(7), 49)
+// cache hit — same result from stored value
+check("memo cache hit 4 again", memo_sq(4), 16)
+
+// toggle — flips between true and false
+fn make_toggle(initial) {
+    let state = initial;
+    () -> {
+        state = !state
+        state
+    }
+}
+let t = make_toggle(false)
+check("toggle 1", t(), true)
+check("toggle 2", t(), false)
+check("toggle 3", t(), true)
+
+print("done")

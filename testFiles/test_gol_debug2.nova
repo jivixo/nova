@@ -1,0 +1,48 @@
+// Same as test_gol_debug but nthreads=1 — isolates if issue is parallel vs single-worker
+
+fn worker_fill(grid, next, w, h, start, end) {
+    let y = start
+    while y < end {
+        let x = 0
+        while x < w {
+            next[y * w + x] = grid[y * w + x] + 1
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+fn next_gen_parallel(grid, next, w, h, nthreads) {
+    let chunk = h / nthreads
+    let handles = make_array(nthreads, 0)
+    let t = 0
+    while t < nthreads {
+        let start = t * chunk
+        let end   = if t == nthreads - 1 { h } else { start + chunk }
+        handles[t] = spawn worker_fill(grid, next, w, h, start, end)
+        t = t + 1
+    }
+    t = 0
+    while t < nthreads {
+        wait(handles[t])
+        t = t + 1
+    }
+    0
+}
+
+let w = 4
+let h = 4
+let grid = make_array(w * h, 0)
+let next = make_array(w * h, 0)
+
+let i = 0
+while i < w * h {
+    grid[i] = i
+    i = i + 1
+}
+
+// nthreads=1: single worker does the whole grid
+next_gen_parallel(grid, next, w, h, 1)
+println("nthreads=1: next[0]=" + str(next[0]) + " next[15]=" + str(next[15]))
+println("Expected:              0                    16")

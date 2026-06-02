@@ -1,0 +1,133 @@
+// ========================================
+// PHASE 6 MEMORY STRESS TEST
+// run with: nova run --memory test_memory_stress.nova
+// ========================================
+
+// ----------------------------------------
+// 1. Registry leak — 5000 arrays created and
+//    discarded in a loop. If ARRAY_HEAP is not
+//    pruned, it grows to 5000 dead Weaks.
+//    live arrays at the end should be 1 (just i).
+// ----------------------------------------
+print "--- registry leak (5000 allocs) ---"
+let i = 0
+while i < 5000 {
+    let temp = [i, i, i]
+    i += 1
+}
+print "done — live should be low"
+
+// ----------------------------------------
+// 2. CoW under heavy aliasing — 50 variables
+//    all pointing at the same array, each one
+//    mutated, each checked for isolation.
+// ----------------------------------------
+print ""
+print "--- cow aliasing (50 aliases) ---"
+let base = [0, 0, 0]
+let a0  = base  let a1  = base  let a2  = base  let a3  = base  let a4  = base
+let a5  = base  let a6  = base  let a7  = base  let a8  = base  let a9  = base
+let a10 = base  let a11 = base  let a12 = base  let a13 = base  let a14 = base
+let a15 = base  let a16 = base  let a17 = base  let a18 = base  let a19 = base
+let a20 = base  let a21 = base  let a22 = base  let a23 = base  let a24 = base
+let a25 = base  let a26 = base  let a27 = base  let a28 = base  let a29 = base
+let a30 = base  let a31 = base  let a32 = base  let a33 = base  let a34 = base
+let a35 = base  let a36 = base  let a37 = base  let a38 = base  let a39 = base
+let a40 = base  let a41 = base  let a42 = base  let a43 = base  let a44 = base
+let a45 = base  let a46 = base  let a47 = base  let a48 = base  let a49 = base
+
+a0[0]  = 0   a1[0]  = 1   a2[0]  = 2   a3[0]  = 3   a4[0]  = 4
+a5[0]  = 5   a6[0]  = 6   a7[0]  = 7   a8[0]  = 8   a9[0]  = 9
+a10[0] = 10  a11[0] = 11  a12[0] = 12  a13[0] = 13  a14[0] = 14
+a15[0] = 15  a16[0] = 16  a17[0] = 17  a18[0] = 18  a19[0] = 19
+a20[0] = 20  a21[0] = 21  a22[0] = 22  a23[0] = 23  a24[0] = 24
+a25[0] = 25  a26[0] = 26  a27[0] = 27  a28[0] = 28  a29[0] = 29
+a30[0] = 30  a31[0] = 31  a32[0] = 32  a33[0] = 33  a34[0] = 34
+a35[0] = 35  a36[0] = 36  a37[0] = 37  a38[0] = 38  a39[0] = 39
+a40[0] = 40  a41[0] = 41  a42[0] = 42  a43[0] = 43  a44[0] = 44
+a45[0] = 45  a46[0] = 46  a47[0] = 47  a48[0] = 48  a49[0] = 49
+
+// base must still be [0, 0, 0]
+if base[0] != 0 { print "FAIL: base[0] was mutated" }
+if base[1] != 0 { print "FAIL: base[1] was mutated" }
+if base[2] != 0 { print "FAIL: base[2] was mutated" }
+
+// each alias must have its own value
+let ok = true
+if a0[0]  != 0  { ok = false }  if a10[0] != 10 { ok = false }
+if a25[0] != 25 { ok = false }  if a49[0] != 49 { ok = false }
+if ok { print "all 50 aliases isolated correctly" }
+
+// ----------------------------------------
+// 3. Peak accuracy — allocate arrays 1 at a
+//    time up to 20, keeping all alive, then
+//    free them. Peak should be >= 20.
+// ----------------------------------------
+print ""
+print "--- peak tracking ---"
+let p0  = [1]   let p1  = [2]   let p2  = [3]   let p3  = [4]   let p4  = [5]
+let p5  = [6]   let p6  = [7]   let p7  = [8]   let p8  = [9]   let p9  = [10]
+let p10 = [11]  let p11 = [12]  let p12 = [13]  let p13 = [14]  let p14 = [15]
+let p15 = [16]  let p16 = [17]  let p17 = [18]  let p18 = [19]  let p19 = [20]
+print "20 arrays alive simultaneously"
+p0=nil  p1=nil  p2=nil  p3=nil  p4=nil
+p5=nil  p6=nil  p7=nil  p8=nil  p9=nil
+p10=nil p11=nil p12=nil p13=nil p14=nil
+p15=nil p16=nil p17=nil p18=nil p19=nil
+print "all freed — peak should be >= 20"
+
+// ----------------------------------------
+// 4. Function isolation at depth — array passed
+//    through 5 levels of function calls, each
+//    mutating it. Caller's copy must be untouched.
+// ----------------------------------------
+print ""
+print "--- function isolation (depth 5) ---"
+fn level5(arr) { arr[0] = 5  arr }
+fn level4(arr) { arr[0] = 4  level5(arr) }
+fn level3(arr) { arr[0] = 3  level4(arr) }
+fn level2(arr) { arr[0] = 2  level3(arr) }
+fn level1(arr) { arr[0] = 1  level2(arr) }
+
+let original = [0, 0, 0]
+let modified = level1(original)
+if original[0] == 0 { print "original untouched" } else { print "FAIL: original mutated" }
+if modified[0] == 5 { print "modified has deepest value" } else { print "FAIL: wrong value" }
+
+// ----------------------------------------
+// 5. Mixed arrays and hashmaps — interleave
+//    heavy array and map allocations, verify
+//    counts are non-zero and program stays stable
+// ----------------------------------------
+print ""
+print "--- mixed allocs (1000 maps + 1000 arrays) ---"
+let j = 0
+while j < 1000 {
+    let arr = [j, j+1]
+    let m   = {"k": j}
+    j += 1
+}
+print "done"
+
+// ----------------------------------------
+// 6. Large array operations — sort, filter,
+//    map on big arrays, verifying no leaks
+//    from intermediate allocations
+// ----------------------------------------
+print ""
+print "--- large array ops ---"
+let big = []
+let k = 0
+while k < 500 {
+    let big = push(big, 500 - k)
+    k += 1
+}
+let big = sort(big)
+let big = filter(big, (x) -> x % 2 == 0)
+let big = map(big, (x) -> x * 2)
+print len(big)   // 250 evens * 2 = still 250 elements
+print big[0]     // smallest even after doubling = 4 (original 2 * 2)
+print big[249]   // largest = 1000 (original 500 * 2)
+
+print ""
+print "ALL MEMORY STRESS TESTS PASSED"

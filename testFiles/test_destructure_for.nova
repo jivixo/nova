@@ -1,0 +1,47 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// basic two-var destructure
+let sum = 0
+for [dx, dy] in [[1,0],[-1,0],[0,1],[0,-1]] {
+    sum = sum + dx + dy
+}
+check("sum of direction pairs", sum, 0)
+
+// three-var destructure
+let total = 0
+for [a, b, c] in [[1,2,3],[4,5,6],[7,8,9]] {
+    total = total + a + b + c
+}
+check("three-var destructure", total, 45)
+
+// nested: collect x coords
+let xs = []
+for [x, y] in [[10,1],[20,2],[30,3]] {
+    xs = push(xs, x)
+}
+check("collect x from pairs", xs, [10, 20, 30])
+
+// break works inside destructure loop
+let count = 0
+for [p, q] in [[1,1],[2,2],[3,3],[4,4]] {
+    if p == 3 { break }
+    count = count + 1
+}
+check("break in destructure loop", count, 2)
+
+// continue works inside destructure loop
+let evens = []
+for [n, skip] in [[1,true],[2,false],[3,true],[4,false]] {
+    if skip { continue }
+    evens = push(evens, n)
+}
+check("continue in destructure loop", evens, [2, 4])
+
+// works in --tree mode too (same test file)
+print("done")

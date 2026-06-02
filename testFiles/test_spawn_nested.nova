@@ -1,0 +1,16 @@
+// Does spawn write work when the array is passed through an intermediate function?
+
+fn writer(arr) {
+    arr[0] = 99
+    0
+}
+
+fn launcher(arr) {
+    let h = spawn writer(arr)
+    wait(h)
+    0
+}
+
+let a = make_array(5, 0)
+launcher(a)
+println("a[0] = " + str(a[0]))   // expect 99

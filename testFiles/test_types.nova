@@ -1,0 +1,146 @@
+// Type coercion and type checking stress test
+
+// ── 1. type() — every value type ─────────────────────────────
+print "--- type() ---"
+print type(42)           // int
+print type(3.14)         // float
+print type("hello")      // string
+print type(true)         // bool
+print type(false)        // bool
+print type(nil)          // nil
+print type([1, 2, 3])   // array
+print type({})           // hashmap
+fn dummy() { 1 }
+print type(dummy)        // function
+
+// ── 2. isInt() ────────────────────────────────────────────────
+print "--- isInt() ---"
+print isInt(42)          // true
+print isInt(0)           // true
+print isInt(-5)          // true
+print isInt(3.14)        // false
+print isInt(3.0)         // false
+print isInt("42")        // false
+print isInt(true)        // false
+print isInt(nil)         // false
+print isInt([1])         // false
+print isInt({})          // false
+
+// ── 3. isFloat() ──────────────────────────────────────────────
+print "--- isFloat() ---"
+print isFloat(3.14)      // true
+print isFloat(0.0)       // true
+print isFloat(42)        // false
+print isFloat("3.14")   // false
+print isFloat(true)      // false
+print isFloat(nil)       // false
+
+// ── 4. isString() ─────────────────────────────────────────────
+print "--- isString() ---"
+print isString("hello")  // true
+print isString("")       // true
+print isString(42)       // false
+print isString(nil)      // false
+print isString(true)     // false
+print isString([])       // false
+
+// ── 5. isBool() ───────────────────────────────────────────────
+print "--- isBool() ---"
+print isBool(true)       // true
+print isBool(false)      // true
+print isBool(1)          // false
+print isBool(0)          // false
+print isBool("true")     // false
+print isBool(nil)        // false
+
+// ── 6. isArray() ──────────────────────────────────────────────
+print "--- isArray() ---"
+print isArray([])        // true
+print isArray([1, 2])    // true
+print isArray({})        // false
+print isArray("hello")   // false
+print isArray(nil)       // false
+print isArray(42)        // false
+
+// ── 7. isNil() ────────────────────────────────────────────────
+print "--- isNil() ---"
+print isNil(nil)         // true
+print isNil(0)           // false
+print isNil("")          // false
+print isNil(false)       // false
+print isNil([])          // false
+print isNil({})          // false
+
+// ── 8. int() conversions ──────────────────────────────────────
+print "--- int() ---"
+print int(42)            // 42
+print int(3.14)          // 3   (truncates)
+print int(3.9)           // 3   (truncates, not rounds)
+print int(-3.9)          // -3  (truncates toward zero)
+print int("42")          // 42
+print int("0")           // 0
+print int("-5")          // -5
+print int(true)          // 1
+print int(false)         // 0
+
+// conversions that should error
+try { print int("abc") }   catch e { print "int(abc): {e}" }
+try { print int("3.14") }  catch e { print "int(3.14): {e}" }
+try { print int(nil) }     catch e { print "int(nil): {e}" }
+try { print int([]) }      catch e { print "int([]): {e}" }
+try { print int({}) }      catch e { print "int({}): {e}" }
+
+// ── 9. float() conversions ────────────────────────────────────
+print "--- float() ---"
+print float(42)          // 42.0
+print float(3.14)        // 3.14
+print float("3.14")      // 3.14
+print float("42")        // 42.0
+print float("-1.5")      // -1.5
+print float(true)        // 1.0
+print float(false)       // 0.0
+
+try { print float("abc") }  catch e { print "float(abc): {e}" }
+try { print float(nil) }    catch e { print "float(nil): {e}" }
+try { print float([]) }     catch e { print "float([]): {e}" }
+
+// ── 10. str() conversions ─────────────────────────────────────
+print "--- str() ---"
+print str(42)            // "42"
+print str(3.14)          // "3.14"
+print str(3.0)           // "3.0"
+print str(true)          // "true"
+print str(false)         // "false"
+print str(nil)           // "nil"
+print str("hello")       // "hello"
+print str([1, 2, 3])    // "[1, 2, 3]"
+print str({})            // "{}"
+
+// ── 11. CHAINED COERCIONS ─────────────────────────────────────
+print "--- chained coercions ---"
+print int(float("42"))         // 42
+print str(int(3.99))           // "3"
+print float(int(3.99))         // 3.0
+print int(str(42))             // error — str(42) = "42", int("42") = 42
+print str(int(float("3.7")))   // "3"
+
+// ── 12. TYPE IN CONDITIONS ────────────────────────────────────
+print "--- type in conditions ---"
+let values = [42, 3.14, "hi", true, nil, [1], {}]
+for v in values {
+    if isInt(v) {
+        print "int: {v}"
+    } else if isFloat(v) {
+        print "float: {v}"
+    } else if isString(v) {
+        print "string: {v}"
+    } else if isBool(v) {
+        print "bool: {v}"
+    } else if isNil(v) {
+        print "nil"
+    } else if isArray(v) {
+        print "array: {v}"
+    } else {
+        print "other: {v}"
+    }
+}

@@ -1,0 +1,33 @@
+// Test: spawn writes to 'next' while reading from 'grid' — same as GoL pattern
+
+fn transform(grid, next, w, start, end) {
+    let y = start
+    while y < end {
+        let x = 0
+        while x < w {
+            next[y * w + x] = grid[y * w + x] + 1
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+fn run_transform(grid, next, w, h) {
+    let hnd = spawn transform(grid, next, w, 0, h)
+    wait(hnd)
+    0
+}
+
+let w = 3
+let h = 3
+let grid = make_array(w * h, 0)
+let next = make_array(w * h, 0)
+let i = 0
+while i < w * h {
+    grid[i] = i
+    i = i + 1
+}
+run_transform(grid, next, w, h)
+println("next[0]=" + str(next[0]) + " next[4]=" + str(next[4]) + " next[8]=" + str(next[8]))
+// expect: 1 5 9

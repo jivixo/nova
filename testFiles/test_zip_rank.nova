@@ -1,0 +1,16 @@
+let players = ["Alice", "Bob"]
+let scores = [88, 72]
+
+fn rank(score) {
+    print "rank got: {type(score)} = {score}"
+    match score {
+        70..101 => "A"
+        _ => "B"
+    }
+}
+
+for player, sc in zip(players, scores) {
+    print "player={player} score={sc}"
+    let r = rank(sc)
+    print "rank={r}"
+}

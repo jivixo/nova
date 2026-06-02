@@ -1,0 +1,53 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// function-type annotation on a parameter — parses and runs cleanly
+fn apply(f: (int) -> int, x: int) {
+    f(x)
+}
+check("apply double", apply((n) -> n * 2, 5), 10)
+check("apply square", apply((n) -> n * n, 4), 16)
+
+// two type params
+fn compose(f: (int) -> int, g: (int) -> int, x: int) {
+    f(g(x))
+}
+check("compose", compose((n) -> n + 1, (n) -> n * 2, 3), 7)
+
+// zero-param function type
+fn call_it(f: () -> int) {
+    f()
+}
+check("zero-param fn type", call_it(() -> 42), 42)
+
+// function type as return type annotation
+fn make_adder(n: int) -> (int) -> int {
+    (x) -> x + n
+}
+let add10 = make_adder(10)
+check("fn return type annotation", add10(5), 15)
+
+// memoize-style — semicolon after {} prevents the next ( being parsed as a call
+fn memoize(f: (int) -> int) {
+    let cache = {};
+    (x) -> {
+        let key = str(x)
+        if hasKey(cache, key) {
+            cache[key]
+        } else {
+            let result = f(x)
+            cache = setKey(cache, key, result)
+            result
+        }
+    }
+}
+let memo_double = memoize((n) -> n * 2)
+check("memoize first call",  memo_double(7), 14)
+check("memoize second call", memo_double(7), 14)
+
+print("done")

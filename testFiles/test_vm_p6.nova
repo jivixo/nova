@@ -1,0 +1,210 @@
+// Part 6 differential test: lambdas, closures, match, try/catch, destructuring, enumerate, ??
+
+// ── 1. BASIC LAMBDA ──────────────────────────────────────────────────────────
+print "--- lambdas ---"
+let double = (x) -> x * 2
+let square = (x) -> x * x
+print double(5)          // 10
+print square(4)          // 16
+print double(square(3))  // 18
+
+// immediately invoked
+print ((x) -> x + 100)(7)  // 107
+
+// ── 2. CLOSURES ───────────────────────────────────────────────────────────────
+print "--- closures ---"
+fn make_adder(n) {
+    (x) -> x + n
+}
+let add5  = make_adder(5)
+let add10 = make_adder(10)
+print add5(3)          // 8
+print add10(3)         // 13
+print add5(add10(1))   // 16
+
+// each call captures independently
+let a = make_adder(1)
+let b = make_adder(2)
+let c = make_adder(3)
+print a(0)  // 1
+print b(0)  // 2
+print c(0)  // 3
+
+// ── 3. CLOSURES OVER LOOP VARIABLES ──────────────────────────────────────────
+print "--- closure over loop var ---"
+let funcs = []
+for i in 0..3 {
+    let captured = i
+    funcs = push(funcs, (x) -> x + captured)
+}
+print funcs[0](10)  // 10
+print funcs[1](10)  // 11
+print funcs[2](10)  // 12
+
+// ── 4. PASSING LAMBDAS TO FUNCTIONS ──────────────────────────────────────────
+print "--- passing lambdas ---"
+fn apply(f, val) { f(val) }
+fn apply_twice(f, val) { f(f(val)) }
+print apply((x) -> x * 3, 5)         // 15
+print apply_twice((x) -> x + 1, 10)  // 12
+
+// ── 5. HIGHER-ORDER FUNCTIONS ────────────────────────────────────────────────
+print "--- HOF: map / filter / reduce ---"
+let nums = [1, 2, 3, 4, 5]
+let doubled = map(nums, (x) -> x * 2)
+print doubled                          // [2, 4, 6, 8, 10]
+
+let evens = filter(nums, (x) -> x % 2 == 0)
+print evens                            // [2, 4]
+
+let total = reduce(nums, 0, (acc, x) -> acc + x)
+print total                            // 15
+
+print any(nums, (x) -> x > 4)         // true
+print any(nums, (x) -> x > 10)        // false
+print all(nums, (x) -> x > 0)         // true
+print all(nums, (x) -> x > 3)         // false
+print count(nums, (x) -> x % 2 == 0)  // 2
+print find(nums, (x) -> x > 3)        // 4
+
+// ── 6. NULL COALESCE ─────────────────────────────────────────────────────────
+print "--- null coalesce ---"
+let m = {"a": 1, "b": 2}
+print m["c"] ?? 99       // 99
+print m["a"] ?? 99       // 1
+let x = nil
+print x ?? "default"     // default
+let y = 0
+print y ?? "default"     // 0  (0 is not nil)
+
+// ── 7. MATCH STATEMENT ───────────────────────────────────────────────────────
+print "--- match ---"
+fn grade(score) {
+    match score {
+        90..101 => { return "A" }
+        80..90  => { return "B" }
+        70..80  => { return "C" }
+        _       => { return "F" }
+    }
+    "?"
+}
+print grade(95)  // A
+print grade(82)  // B
+print grade(71)  // C
+print grade(50)  // F
+
+fn day_name(n) {
+    match n {
+        1 => { return "Mon" }
+        2 => { return "Tue" }
+        3 => { return "Wed" }
+        _ => { return "other" }
+    }
+    "?"
+}
+print day_name(1)  // Mon
+print day_name(3)  // Wed
+print day_name(7)  // other
+
+// ── 8. TRY / CATCH / THROW ───────────────────────────────────────────────────
+print "--- try/catch ---"
+try {
+    throw "oops"
+} catch e {
+    print e          // oops
+}
+
+fn safe_div(a, b) {
+    if b == 0 { throw "division by zero" }
+    a / b
+}
+
+try {
+    print safe_div(10, 2)   // 5.0
+    print safe_div(10, 0)   // throws
+    print "unreachable"
+} catch e {
+    print "caught: {e}"    // caught: division by zero
+}
+
+// nested try
+try {
+    try {
+        throw "inner"
+    } catch e {
+        print "inner caught: {e}"  // inner caught: inner
+        throw "rethrown"
+    }
+} catch e {
+    print "outer caught: {e}"      // outer caught: rethrown
+}
+
+// ── 9. ARRAY DESTRUCTURING ───────────────────────────────────────────────────
+print "--- array destructuring ---"
+let [p, q, r] = [10, 20, 30]
+print p  // 10
+print q  // 20
+print r  // 30
+
+fn min_max(arr) {
+    let s = sort(arr)
+    return [s[0], s[-1]]
+}
+let [lo, hi] = min_max([3, 1, 4, 1, 5, 9])
+print lo  // 1
+print hi  // 9
+
+// ── 10. HASHMAP DESTRUCTURING ────────────────────────────────────────────────
+print "--- hashmap destructuring ---"
+let {name, age} = {"name": "Alice", "age": 30}
+print name  // Alice
+print age   // 30
+
+let {score} = {"name": "Bob"}
+print score  // nil
+
+// ── 11. FOR ENUMERATE ────────────────────────────────────────────────────────
+print "--- for enumerate ---"
+let words = ["zero", "one", "two"]
+for i, w in words {
+    print "{i}: {w}"
+}
+// 0: zero
+// 1: one
+// 2: two
+
+// ── 12. MULTI-LEVEL CLOSURES ──────────────────────────────────────────────────
+print "--- multi-level closures ---"
+fn make_between(lo, hi) {
+    (x) -> x >= lo && x <= hi
+}
+let in_range = make_between(10, 20)
+print in_range(5)   // false
+print in_range(10)  // true
+print in_range(15)  // true
+print in_range(21)  // false
+
+fn make_multiplier(x) {
+    (y) -> x * y
+}
+let triple = make_multiplier(3)
+print triple(4)   // 12
+print triple(7)   // 21
+
+// ── 13. COMPOSE / HOF RETURNING FUNCTIONS ────────────────────────────────────
+print "--- compose ---"
+fn compose(f, g) { (x) -> f(g(x)) }
+let inc_fn = (x) -> x + 1
+let dbl_fn = (x) -> x * 2
+let inc_then_dbl = compose(dbl_fn, inc_fn)
+let dbl_then_inc = compose(inc_fn, dbl_fn)
+print inc_then_dbl(3)  // dbl(inc(3)) = dbl(4) = 8
+print dbl_then_inc(3)  // inc(dbl(3)) = inc(6) = 7
+
+// ── 14. PIPE WITH LAMBDA ─────────────────────────────────────────────────────
+print "--- pipe + lambda ---"
+let result = [1,2,3,4,5,6]
+    |> filter((x) -> x % 2 == 0)
+    |> map((x) -> x * x)
+    |> reduce(0, (a, x) -> a + x)
+print result  // 4+16+36 = 56

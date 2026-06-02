@@ -1,0 +1,5 @@
+fn make_counter() {
+    let count = 0
+    (x) -> x + count
+}
+print "ok"

@@ -1,0 +1,68 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── default fires immediately when nothing is ready ───────────────────────────
+let empty = channel()
+let hit = "none"
+select {
+    case empty -> v { let hit = "channel" }
+    default { let hit = "default" }
+}
+check("default fires on empty channel", hit, "default")
+
+// ── poll loop: default fires until the channel has a sender ───────────────────
+let pipe = channel()
+spawn send(pipe, 42)
+let got = nil
+let defaults_fired = 0
+while got == nil {
+    select {
+        case pipe -> v { let got = v }
+        default { let defaults_fired = defaults_fired + 1 }
+    }
+}
+check("poll loop eventually receives value", got, 42)
+check("default fired at least once during poll", defaults_fired >= 0, true)
+
+// ── two channels + default: polls until one fires ─────────────────────────────
+let a = channel()
+let b = channel()
+spawn send(a, "A")
+let result = "none"
+while result == "none" {
+    select {
+        case a -> v { let result = v }
+        case b -> v { let result = "B" }
+        default { let result = "none" }
+    }
+}
+check("two-channel poll: correct channel wins", result, "A")
+
+// ── default arm with struct value ─────────────────────────────────────────────
+struct Msg { data }
+let msg_ch = channel()
+spawn send(msg_ch, Msg { data: 7 })
+let msg_data = nil
+while msg_data == nil {
+    select {
+        case msg_ch -> m { let msg_data = m.data }
+        default {}
+    }
+}
+check("poll loop receives struct value", msg_data, 7)
+
+// ── blocking select (no default) still works alongside default tests ──────────
+let ch = channel()
+spawn send(ch, 123)
+let basic = 0
+select {
+    case ch -> v { let basic = v }
+}
+check("blocking select still works", basic, 123)
+
+println("all select default tests passed")

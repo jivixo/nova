@@ -1,0 +1,9 @@
+// library file — imported by test_import.nova
+
+fn greet(name) {
+    "Hello " + name
+}
+
+fn square(x) { x * x }
+
+let LIB_VERSION = 1

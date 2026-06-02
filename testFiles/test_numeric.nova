@@ -1,0 +1,112 @@
+// Numeric edge cases stress test
+
+// ── 1. INTEGER DIVISION ───────────────────────────────────────
+print "--- integer division ---"
+print 10 / 3          // 3.333...  (int/int → float)
+print 7 / 2           // 3.5
+print 0 / 5           // 0.0
+print -7 / 2          // -3.5
+print 1 / 1           // 1.0
+
+// ── 2. FLOAT SPECIAL VALUES ───────────────────────────────────
+print "--- float special values ---"
+print 1.0 / 0.0       // inf
+print -1.0 / 0.0      // -inf
+print 0.0 / 0.0       // NaN
+print sqrt(-1.0)      // NaN
+print sqrt(0.0)       // 0.0
+print sqrt(4.0)       // 2.0
+
+// ── 3. INF / NAN ARITHMETIC ───────────────────────────────────
+print "--- inf/nan arithmetic ---"
+let inf_val = 1.0 / 0.0
+let nan_val = 0.0 / 0.0
+print inf_val + 1.0       // inf
+print inf_val * 0.0       // NaN
+print inf_val - inf_val   // NaN
+print inf_val * -1.0      // -inf
+print nan_val + 1.0       // NaN
+print nan_val * 0.0       // NaN
+
+// ── 4. INF / NAN COMPARISONS ──────────────────────────────────
+print "--- inf/nan comparisons ---"
+print inf_val > 1000000   // true
+print inf_val == inf_val  // true
+print nan_val == nan_val  // false (IEEE 754)
+print nan_val != nan_val  // true  (IEEE 754)
+print nan_val > 0.0       // false
+print nan_val < 0.0       // false
+
+// ── 5. INF / NAN THROUGH ARRAY OPS ───────────────────────────
+print "--- inf/nan in arrays ---"
+let vals = [1.0, inf_val, -inf_val, 2.0]
+print max(vals)           // inf
+print min(vals)           // -inf
+print sum(vals)           // NaN? (inf + (-inf))
+
+let with_nan = [3.0, nan_val, 1.0, 2.0]
+print sum(with_nan)       // NaN (any NaN poisons sum)
+print max(with_nan)       // implementation-defined
+print sort(with_nan)      // NaN sorts unpredictably — should not crash
+
+// ── 6. LARGE INTEGERS ─────────────────────────────────────────
+print "--- large integers ---"
+print pow(2, 10)          // 1024
+print pow(2, 30)          // 1073741824
+print pow(2, 50)          // 1125899906842624 (as float)
+print pow(10, 15)         // 1e15
+print 999999999 * 999999999   // large int product
+
+// ── 7. MOD BUILT-IN EDGE CASES ────────────────────────────────
+print "--- mod edge cases ---"
+print mod(7, 3)           // 1
+print mod(-7, 3)          // 2  (always non-negative)
+print mod(7, -3)          // -2 (sign follows divisor in math mod)
+print mod(0, 5)           // 0
+print mod(5, 5)           // 0
+print mod(6, 5)           // 1
+print mod(-1, 26)         // 25 (useful for wrapping)
+
+// zero divisor should error
+try {
+    print mod(5, 0)
+} catch e {
+    print "caught: {e}"
+}
+
+// ── 8. PERCENT OPERATOR (REMAINDER) ──────────────────────────
+print "--- percent remainder ---"
+print 7 % 3          // 1
+print -7 % 3         // -1  (remainder, not modulo)
+print 7 % -3         // 1
+
+// ── 9. MATH BUILT-INS EDGE CASES ──────────────────────────────
+print "--- math built-ins ---"
+print abs(-42)        // 42
+print abs(42)         // 42
+print abs(-3.14)      // 3.14
+print abs(0)          // 0
+print floor(3.9)      // 3
+print floor(-3.1)     // -4
+print ceil(3.1)       // 4
+print ceil(-3.9)      // -3
+print round(3.5)      // 4
+print round(2.5)      // 3  (banker's rounding or round-half-up)
+print round(-3.5)     // -4
+print round(3.14159, 2)  // 3.14
+print sqrt(2.0)       // 1.4142...
+print pow(2, 0)       // 1.0
+print pow(0, 0)       // 1.0
+print pow(-2, 3)      // -8.0
+
+// ── 10. INT / FLOAT BOUNDARY ──────────────────────────────────
+print "--- int/float boundary ---"
+print 1 + 0.0         // 1.0  (int + float → float)
+print 1 == 1.0        // true (cross-type equality)
+print 1 != 1.0        // false
+print type(42)        // int
+print type(42.0)      // float
+print type(10 / 3)    // float (division always float)
+print type(10 * 3)    // int   (int * int → int)
+print type(abs(-5))   // int
+print type(abs(-5.0)) // float

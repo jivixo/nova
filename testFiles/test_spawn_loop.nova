@@ -1,0 +1,26 @@
+// Does spawn-in-a-loop write work when array is a function parameter?
+
+fn writer(arr, idx, val) {
+    arr[idx] = val
+    0
+}
+
+fn launch_all(arr, n) {
+    let handles = make_array(n, 0)
+    let i = 0
+    while i < n {
+        handles[i] = spawn writer(arr, i, i * 10)
+        i = i + 1
+    }
+    i = 0
+    while i < n {
+        wait(handles[i])
+        i = i + 1
+    }
+    0
+}
+
+let a = make_array(4, 0)
+launch_all(a, 4)
+println(str(a[0]) + " " + str(a[1]) + " " + str(a[2]) + " " + str(a[3]))
+// Expected: 0 10 20 30

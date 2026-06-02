@@ -1,0 +1,20 @@
+struct Point { x, y }
+
+let p = Point { x: 10, y: 20 }
+
+p.x += 5
+p.y -= 3
+p.x *= 2
+p.y /= 2
+
+println(p.x)   // expect 30  (10+5)*2
+println(p.y)   // expect 8   (20-3)/2
+
+struct Counter { n }
+let c = Counter { n: 0 }
+let i = 0
+while i < 5 {
+    c.n += 1
+    i += 1
+}
+println(c.n)   // expect 5

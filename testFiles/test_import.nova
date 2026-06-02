@@ -1,0 +1,13 @@
+// import test — LLVM backend
+
+import "test_import_lib.nova"
+
+print greet("Nova")    // Hello Nova
+print square(7)        // 49
+print LIB_VERSION      // 1
+
+// double import is idempotent (no circular)
+import "test_import_lib.nova"
+print square(4)        // 16
+
+print "done"

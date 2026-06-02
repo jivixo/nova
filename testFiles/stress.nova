@@ -1,0 +1,407 @@
+// ========================================
+// NOVA STRESS TEST — FULL LANGUAGE
+// ========================================
+
+// ----------------------------------------
+// 1. Variables + Types + Null coalescing
+// ----------------------------------------
+print "--- variables & types ---"
+let x = 42
+let name = "Nova"
+let flag = true
+let nothing = nil
+
+print type(x)        // number
+print type(name)     // string
+print type(flag)     // bool
+print type(nothing)  // nil
+
+x = 100
+print x              // 100
+
+let missing = nil
+print missing ?? "default"   // default
+missing = "found"
+print missing ?? "default"   // found
+
+// ----------------------------------------
+// 2. Arithmetic + Compound assignment
+// ----------------------------------------
+print ""
+print "--- arithmetic ---"
+let a = 10
+a += 5
+a -= 3
+a *= 2
+a /= 4
+print a    // 6
+
+print 10 % 3        // 1
+print pow(2, 10)    // 1024
+print sqrt(144)     // 12
+print abs(-99)      // 99
+print floor(3.9)    // 3
+print ceil(3.1)     // 4
+print round(3.14159, 2)   // 3.14
+
+// ----------------------------------------
+// 3. Strings
+// ----------------------------------------
+print ""
+print "--- strings ---"
+let s = "  hello nova  "
+print upper(trim(s))                   // HELLO NOVA
+print replace("hello", "l", "r")      // herro
+print split("a,b,c", ",")             // [a, b, c]
+print join(["x", "y", "z"], "-")      // x-y-z
+print substr("hello", 1, 3)           // el
+print contains("hello", "ell")        // true
+print startsWith("nova", "no")       // true
+print endsWith("nova", "va")         // true
+print len("hello")                    // 5
+print "pi is {round(3.14159, 3)}"     // pi is 3.142
+
+// ----------------------------------------
+// 4. If / else if / else
+// ----------------------------------------
+print ""
+print "--- if/else if/else ---"
+fn classify(n) {
+    if n < 0 {
+        return "negative"
+    } else if n == 0 {
+        return "zero"
+    } else if n < 10 {
+        return "small"
+    } else if n < 100 {
+        return "medium"
+    } else {
+        return "large"
+    }
+}
+print classify(-5)    // negative
+print classify(0)     // zero
+print classify(7)     // small
+print classify(42)    // medium
+print classify(999)   // large
+
+// ----------------------------------------
+// 5. While + break + continue
+// ----------------------------------------
+print ""
+print "--- while ---"
+let i = 0
+let total = 0
+while i < 10 {
+    i += 1
+    if i % 2 == 0 { continue }
+    if i > 7 { break }
+    total += i
+}
+print total   // 1+3+5+7 = 16
+
+// ----------------------------------------
+// 6. For loops — range, array, enumerate, zip
+// ----------------------------------------
+print ""
+print "--- for loops ---"
+let sum_range = 0
+for n in 1..6 {
+    sum_range += n
+}
+print sum_range   // 15
+
+for i, fruit in ["apple", "banana", "cherry"] {
+    print "{i}: {fruit}"
+}
+// 0: apple  1: banana  2: cherry
+
+let keys_list = ["a", "b", "c"]
+let vals_list = [1, 2, 3]
+for [k, v] in zip(keys_list, vals_list) {
+    print "{k} = {v}"
+}
+// a = 1  b = 2  c = 3
+
+// ----------------------------------------
+// 7. Functions + recursion + return
+// ----------------------------------------
+print ""
+print "--- functions ---"
+fn factorial(n) {
+    if n <= 1 { return 1 }
+    return n * factorial(n - 1)
+}
+print factorial(10)   // 3628800
+
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+print fib(15)   // 610
+
+fn first_over(arr, threshold) {
+    for x in arr {
+        if x > threshold { return x }
+    }
+    return nil
+}
+print first_over([3, 7, 1, 9, 4], 6)   // 7
+print first_over([1, 2, 3], 99)        // nil
+
+// ----------------------------------------
+// 8. Lambdas + closures + higher-order
+// ----------------------------------------
+print ""
+print "--- lambdas & higher-order ---"
+let double = (x) -> x * 2
+let nums = [1, 2, 3, 4, 5]
+
+print map(nums, double)                         // [2, 4, 6, 8, 10]
+print filter(nums, (x) -> x % 2 == 0)          // [2, 4]
+print reduce(nums, 0, (acc, x) -> acc + x)      // 15
+print find(nums, (x) -> x > 3)                  // 4
+print any(nums, (x) -> x > 4)                   // true
+print all(nums, (x) -> x > 0)                   // true
+print count(nums, (x) -> x % 2 != 0)            // 3
+print sum(nums)                                  // 15
+print product(nums)                              // 120
+
+fn make_multiplier(factor) {
+    (x) -> x * factor
+}
+let triple = make_multiplier(3)
+print triple(7)   // 21
+
+// ----------------------------------------
+// 9. Pipe operator
+// ----------------------------------------
+print ""
+print "--- pipe ---"
+let words = ["banana", "apple", "cherry", "avocado", "apricot"]
+let result = words
+    |> filter((w) -> startsWith(w, "a"))
+    |> map((w) -> upper(w))
+    |> sort()
+print result   // [APPLE, APRICOT, AVOCADO]
+
+let total2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    |> filter((x) -> x % 2 == 0)
+    |> map((x) -> x * x)
+    |> sum()
+print total2   // 220
+
+// ----------------------------------------
+// 10. Arrays
+// ----------------------------------------
+print ""
+print "--- arrays ---"
+let arr = [3, 1, 4, 1, 5, 9, 2, 6]
+let arr = sort(arr)
+print arr             // [1, 1, 2, 3, 4, 5, 6, 9]
+print min(arr)        // 1
+print max(arr)        // 9
+print sum(arr)        // 31
+print len(arr)        // 8
+print reverse(arr)    // [9, 6, 5, 4, 3, 2, 1, 1]
+print slice(arr, 2, 5)   // [2, 3, 4]
+print concat(arr, [10, 11])  // [1, 1, 2, 3, 4, 5, 6, 9, 10, 11]
+
+let arr2 = push(arr, 99)
+let arr2 = pop(arr2)
+print arr2   // [1, 1, 2, 3, 4, 5, 6, 9]
+
+// ----------------------------------------
+// 11. Hash maps
+// ----------------------------------------
+print ""
+print "--- hashmaps ---"
+let person = {"name": "Alice", "age": 30, "city": "NY"}
+print person["name"]              // Alice
+print person["missing"] ?? "n/a"  // n/a
+print hasKey(person, "age")       // true
+print keys(person)                // [name, age, city]
+
+person = setKey(person, "age", 31)
+print person["age"]   // 31
+
+person = delete(person, "city")
+print hasKey(person, "city")   // false
+
+let extra = {"role": "admin", "level": 5}
+person = mergeMap(person, extra)
+print person["role"]    // admin
+print person["level"]   // 5
+
+// ----------------------------------------
+// 12. Pattern matching
+// ----------------------------------------
+print ""
+print "--- match ---"
+fn grade(score) {
+    match score {
+        90..101 => "A"
+        70..90  => "B"
+        50..70  => "C"
+        _       => "F"
+    }
+}
+for s in [95, 83, 61, 40, 70, 90] {
+    print "{s} -> {grade(s)}"
+}
+// 95->A  83->B  61->C  40->F  70->B  90->A
+
+fn day_type(day) {
+    match day {
+        "Saturday" => "weekend"
+        "Sunday"   => "weekend"
+        _          => "weekday"
+    }
+}
+print day_type("Monday")    // weekday
+print day_type("Saturday")  // weekend
+
+// ----------------------------------------
+// 13. Logical operators + NOT
+// ----------------------------------------
+print ""
+print "--- logical ---"
+print true && false    // false
+print true || false    // true
+print !true            // false
+print !!false          // false
+
+let items = [1, 2, 3]
+if !contains(items, 99) {
+    print "99 not in list"   // 99 not in list
+}
+
+// ----------------------------------------
+// 14. try / catch / throw
+// ----------------------------------------
+print ""
+print "--- try/catch/throw ---"
+fn divide(a, b) {
+    if b == 0 { throw "division by zero" }
+    return a / b
+}
+
+try {
+    print divide(10, 2)   // 5
+    print divide(10, 0)   // throws
+} catch err {
+    print "caught: {err}"  // caught: division by zero
+}
+
+// throw any value
+try {
+    throw {"code": 500, "msg": "server error"}
+} catch err {
+    print "{err["code"]}: {err["msg"]}"   // 500: server error
+}
+
+// nested try/catch
+try {
+    try {
+        throw "inner"
+    } catch e {
+        print "inner: {e}"   // inner: inner
+        throw "outer"
+    }
+} catch e {
+    print "outer: {e}"       // outer: outer
+}
+
+// ----------------------------------------
+// 15. import
+// ----------------------------------------
+print ""
+print "--- import ---"
+// (skipped here — tested separately with utils.nova)
+print "import tested separately"
+
+// ----------------------------------------
+// 16. printn
+// ----------------------------------------
+print ""
+print "--- printn ---"
+for i in 0..5 {
+    for j in 0..i {
+        printn "* "
+    }
+    print ""
+}
+//
+// *
+// * *
+// * * *
+// * * * *
+
+for i in 1..11 {
+    printn "{i} "
+}
+print ""   // 1 2 3 4 5 6 7 8 9 10
+
+// ----------------------------------------
+// 17. Variadic functions
+// ----------------------------------------
+print ""
+print "--- variadic ---"
+fn log(label, items...) {
+    printn "{label}: "
+    for item in items {
+        printn "{item} "
+    }
+    print ""
+}
+log("nums", 1, 2, 3, 4, 5)      // nums: 1 2 3 4 5
+log("words", "hi", "hello")     // words: hi hello
+
+// ----------------------------------------
+// 18. Multiline strings
+// ----------------------------------------
+print ""
+print "--- multiline strings ---"
+let poem = """
+roses are red
+violets are blue
+Nova is fast
+and easy too
+"""
+print poem
+
+// ----------------------------------------
+// 19. Complex combined example
+// ----------------------------------------
+print ""
+print "--- combined: leaderboard ---"
+let players = ["Alice", "Bob", "Charlie", "Diana", "Eve"]
+let scores  = [88, 72, 95, 61, 79]
+
+let board = {}
+for [player, score] in zip(players, scores) {
+    board = setKey(board, player, score)
+}
+
+fn rank(score) {
+    match score {
+        90..101 => "S"
+        70..90  => "A"
+        50..70  => "B"
+        _       => "C"
+    }
+}
+
+let sorted_scores = sort(scores)
+let sorted_scores = reverse(sorted_scores)
+
+print "Leaderboard:"
+for [player, score] in zip(players, scores) {
+    print "  {player}: {score} ({rank(score)})"
+}
+print "Top score: {max(scores)}"
+print "Average:   {round(sum(scores) / len(scores), 1)}"
+print "Passing (>=70): {count(scores, (s) -> s >= 70)}"
+
+print ""
+print "ALL STRESS TESTS PASSED"

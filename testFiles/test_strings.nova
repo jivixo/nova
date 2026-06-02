@@ -1,0 +1,152 @@
+// String built-ins stress test
+
+// ── 1. EMPTY STRING ───────────────────────────────────────────
+print "--- empty string ---"
+print len("")             // 0
+print upper("")           // ""
+print lower("")           // ""
+print trim("")            // ""
+print contains("", "")   // true
+print contains("", "a")  // false
+print replace("", "a", "b")  // ""
+print startsWith("", "")    // true
+print endsWith("", "")      // true
+print split("", ",")         // [""]  or []
+
+// ── 2. UPPER / LOWER ──────────────────────────────────────────
+print "--- upper/lower ---"
+print upper("hello world")   // HELLO WORLD
+print lower("HELLO WORLD")   // hello world
+print upper("already UPPER") // ALREADY UPPER
+print lower("already lower") // already lower
+print upper("123 !@#")       // 123 !@# (non-alpha unchanged)
+print lower("123 !@#")       // 123 !@#
+
+// ── 3. TRIM ───────────────────────────────────────────────────
+print "--- trim ---"
+print trim("  hello  ")      // "hello"
+print trim("no spaces")      // "no spaces"
+print trim("   ")            // ""
+print trim("\thello\n")      // "hello"
+
+// ── 4. SPLIT / JOIN ROUNDTRIP ─────────────────────────────────
+print "--- split/join ---"
+let parts = split("a,b,c", ",")
+print parts                    // [a, b, c]
+print len(parts)               // 3
+print join(parts, ",")         // a,b,c
+print join(parts, " - ")       // a - b - c
+print join([], ",")            // ""
+print join(["one"], ",")       // "one"
+
+// split with multi-char delimiter
+let words = split("hello world foo", " ")
+print words                    // [hello, world, foo]
+print len(words)               // 3
+
+// split with no match
+let ns = split("hello", ",")
+print ns                       // [hello]
+print len(ns)                  // 1
+
+// split into chars
+let chars = split("abc", "")
+print chars                    // [a, b, c]
+print len(chars)               // 3
+
+// ── 5. CONTAINS ───────────────────────────────────────────────
+print "--- contains ---"
+print contains("hello world", "world")   // true
+print contains("hello world", "xyz")     // false
+print contains("hello world", "hello")   // true
+print contains("hello world", " ")       // true
+print contains("hello", "")             // true
+
+// ── 6. REPLACE ────────────────────────────────────────────────
+print "--- replace ---"
+print replace("hello world", "world", "Nova")  // hello Nova
+print replace("aabbcc", "b", "X")             // aaXXcc
+print replace("hello", "x", "y")             // hello (no match)
+print replace("aaa", "a", "bb")              // bbbbbb
+print replace("hello", "hello", "")          // ""
+
+// ── 7. SUBSTR ─────────────────────────────────────────────────
+print "--- substr ---"
+print substr("hello world", 0, 5)   // hello
+print substr("hello world", 6, 5)   // world
+print substr("hello", 0, 0)         // ""
+print substr("hello", 2, 3)         // llo
+print substr("hello", 1, 100)       // ello (clamp to end)
+
+// out of bounds
+try {
+    print substr("hello", 10, 2)
+} catch e {
+    print "caught: {e}"
+}
+
+// ── 8. STARTSWITH / ENDSWITH ────────────────────────────────
+print "--- starts/ends with ---"
+print startsWith("hello world", "hello")   // true
+print startsWith("hello world", "world")   // false
+print startsWith("hello", "")             // true
+print startsWith("", "hello")             // false
+print endsWith("hello world", "world")     // true
+print endsWith("hello world", "hello")     // false
+print endsWith("hello", "")              // true
+print endsWith("", "hello")              // false
+
+// ── 9. LEN ────────────────────────────────────────────────────
+print "--- len ---"
+print len("hello")         // 5
+print len("hello world")   // 11
+print len("")              // 0
+print len("a")             // 1
+
+// ── 10. SPECIAL CHARACTERS ────────────────────────────────────
+print "--- special chars ---"
+let s = "line1\nline2"
+print len(s)               // 11
+print contains(s, "\n")    // true
+let t = "tab\there"
+print contains(t, "\t")    // true
+let q = "say \"hello\""
+print len(q)               // 11
+print contains(q, "\"")    // true
+
+// ── 11. STRINGS IN ARRAYS / HASHMAPS ──────────────────────────
+print "--- strings in collections ---"
+let words2 = ["apple", "banana", "cherry"]
+print sort(words2)                     // [apple, banana, cherry]
+print contains(words2, "banana")       // true
+print contains(words2, "grape")        // false
+print find(words2, (x) -> startsWith(x, "b"))  // banana
+
+let m = {"greeting": "hello", "name": "Nova"}
+print m["greeting"]                    // hello
+print upper(m["name"])                 // NOVA
+let keys_list = keys(m)
+print len(keys_list)                   // 2
+
+// ── 12. STRING INTERPOLATION EDGE CASES ──────────────────────
+print "--- string interpolation ---"
+let n = 42
+print "value is {n}"                   // value is 42
+print "sum is {n + 1}"                 // sum is 43
+print "type is {type(n)}"             // type is int
+print "nested {upper("hello")}"       // nested HELLO
+let arr = [1, 2, 3]
+print "first is {arr[0]}"             // first is 1
+print "len is {len(arr)}"             // len is 3
+
+// ── 13. LONG STRING ───────────────────────────────────────────
+print "--- long string ---"
+let chunk = "abcdefghij"
+let big = ""
+for i in 0..100 {
+    big = big + chunk
+}
+print len(big)                         // 1000
+print startsWith(big, "abcdefghij")  // true
+print endsWith(big, "abcdefghij")    // true
+print contains(big, "fghija")         // true (wraps across chunk boundary)

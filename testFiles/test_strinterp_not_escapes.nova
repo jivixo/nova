@@ -1,0 +1,49 @@
+// Items 4+5+6+7: string interpolation, unary !, escape sequences
+
+// Basic interpolation
+let name = "Nova"
+let greeting = "Hello, {name}!"
+print greeting           // Hello, Nova!
+
+// Multi-variable interpolation
+let x = 10
+let y = 20
+print "x={x} y={y}"     // x=10 y=20
+
+// Number interpolation
+let n = 42
+print "n is {n}"         // n is 42
+
+// Float interpolation
+let pi = 3.14
+print "pi={pi}"          // pi=3.14
+
+// Bool interpolation
+let flag = true
+print "flag={flag}"      // flag=true
+
+// Unary NOT
+print !true              // false
+print !false             // true
+
+let a = true
+let b = false
+print !a                 // false
+print !b                 // true
+
+// NOT in condition
+let val = 5
+if !false {
+    print "not-false ok" // not-false ok
+}
+
+// Escape sequences in plain strings
+print "line1\nline2"     // line1 (newline) line2
+print "col1\tcol2"       // col1 (tab) col2
+
+// Unary minus
+let neg = -7
+print neg                // -7
+print -3                 // -3
+let z = 0 - 5
+print z                  // -5

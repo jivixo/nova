@@ -1,0 +1,195 @@
+// Conway's Game of Life — Nova parallel benchmark
+//
+// Grid  : 512 x 512 flat array, toroidal (wrap-around edges)
+// Turns : 1000 generations
+// Modes : serial (single-threaded) and parallel (4 OS threads)
+//
+// Purpose: benchmark Nova's LLVM backend against an equivalent Go implementation.
+// Each cell is stored as 0 (dead) or 1 (alive) in a flat row-major array.
+// Index arithmetic: cell (x, y) lives at grid[y * w + x].
+//
+// Build and run:
+//   nova build gol.nova -o gol
+//   ./gol
+
+// Count the 8 neighbours of cell (x, y) on a toroidal grid.
+// Wrap-around is handled with modulo so the grid has no boundary conditions.
+// Values are 0 or 1, so summing them directly gives the live neighbour count.
+fn count_neighbours(grid, x, y, w, h) {
+    // precompute wrapped column indices and row offsets to avoid redundant modulo
+    let xm = (x - 1 + w) % w
+    let xp = (x + 1) % w
+    let ym_off = ((y - 1 + h) % h) * w
+    let y_off  = y * w
+    let yp_off = ((y + 1) % h) * w
+    // sum all 8 neighbours (3 above, 2 sides, 3 below)
+    let n = grid[ym_off + xm] + grid[ym_off + x] + grid[ym_off + xp]
+    n = n + grid[y_off + xm] + grid[y_off + xp]
+    n = n + grid[yp_off + xm] + grid[yp_off + x] + grid[yp_off + xp]
+    n
+}
+
+// Compute one full generation: read from `grid`, write result into `next`.
+// Standard GoL rules:
+//   alive cell with 2 or 3 neighbours survives; otherwise dies
+//   dead cell with exactly 3 neighbours becomes alive; otherwise stays dead
+// Writing into a separate output array (double-buffering) prevents a cell update
+// from affecting the neighbour count of adjacent cells in the same generation.
+fn next_gen_into(grid, next, w, h) {
+    let y = 0
+    while y < h {
+        let x = 0
+        while x < w {
+            let n = count_neighbours(grid, x, y, w, h)
+            let cell = grid[y * w + x]
+            let alive = if n == 3 || (cell == 1 && n == 2) { 1 } else { 0 }
+            next[y * w + x] = alive
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+// Worker function for parallel execution — identical GoL logic to next_gen_into,
+// but processes only rows [start, end) instead of the full grid.
+// Spawned as a separate OS thread by next_gen_parallel_into.
+// Reads from `grid` (shared read-only), writes to `next` (non-overlapping regions).
+// No synchronisation needed: each thread owns a distinct row slice of `next`.
+fn worker_fill(grid, next, w, h, start, end) {
+    let y = start
+    while y < end {
+        let x = 0
+        while x < w {
+            let n = count_neighbours(grid, x, y, w, h)
+            let cell = grid[y * w + x]
+            let alive = if n == 3 || (cell == 1 && n == 2) { 1 } else { 0 }
+            next[y * w + x] = alive
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+// Parallel generation step: divide the grid into horizontal slices,
+// spawn one OS thread per slice, then wait for all threads to finish.
+// Slices are contiguous rows: thread t owns rows [t*chunk, (t+1)*chunk).
+// The last thread takes any remainder so the full grid is always covered.
+// All handles are collected before any wait so threads run concurrently.
+fn next_gen_parallel_into(grid, next, w, h, nthreads) {
+    let chunk   = h / nthreads
+    let handles = make_array(nthreads, 0)
+    let t = 0
+    while t < nthreads {
+        let start = t * chunk
+        let end   = if t == nthreads - 1 { h } else { start + chunk }
+        handles[t] = spawn worker_fill(grid, next, w, h, start, end)
+        t = t + 1
+    }
+    // wait phase is separate from spawn phase so all threads are running in parallel
+    t = 0
+    while t < nthreads {
+        wait(handles[t])
+        t = t + 1
+    }
+    0
+}
+
+// Allocate a w*h grid and seed with a deterministic pattern.
+// Formula (x + y*3) % 5 < 2 gives roughly 40% of cells alive initially,
+// close to the ~33% density in the reference Go benchmark's PGM seeding.
+fn make_grid(w, h) {
+    let grid = make_array(w * h, 0)
+    let y = 0
+    while y < h {
+        let x = 0
+        while x < w {
+            let alive = if (x + y * 3) % 5 < 2 { 1 } else { 0 }
+            grid[y * w + x] = alive
+            x = x + 1
+        }
+        y = y + 1
+    }
+    grid
+}
+
+// Count live cells (value == 1) across the whole flat array.
+fn count_alive(grid) {
+    let total = 0
+    let i = 0
+    while i < len(grid) {
+        total = total + grid[i]
+        i = i + 1
+    }
+    total
+}
+
+// Run `turns` generations serially. Uses double-buffering: alternate between
+// two pre-allocated arrays rather than allocating a new buffer each generation.
+// Returns the final live grid.
+fn run_serial(init_grid, w, h, turns) {
+    let g   = init_grid
+    let buf = make_array(w * h, 0)
+    let t   = 0
+    while t < turns {
+        next_gen_into(g, buf, w, h)
+        // swap g and buf so the output of this generation becomes the input of the next
+        let tmp = g
+        g   = buf
+        buf = tmp
+        t = t + 1
+    }
+    g
+}
+
+// Run `turns` generations in parallel using `nthreads` OS threads per generation.
+// Same double-buffering pattern as run_serial.
+// Returns the final live grid.
+fn run_parallel(init_grid, w, h, turns, nthreads) {
+    let g   = init_grid
+    let buf = make_array(w * h, 0)
+    let t   = 0
+    while t < turns {
+        next_gen_parallel_into(g, buf, w, h, nthreads)
+        let tmp = g
+        g   = buf
+        buf = tmp
+        t = t + 1
+    }
+    g
+}
+
+// --- benchmark harness ---
+
+let w        = 512
+let h        = 512
+let turns    = 1000
+let nthreads = 4
+
+// two independent grids with identical seeds so serial and parallel are comparable
+let grid_s = make_grid(w, h)
+let grid_p = make_grid(w, h)
+
+println("Nova GoL  " + str(w) + "x" + str(h) + "  turns=" + str(turns) + "  threads=" + str(nthreads))
+println("initial alive: " + str(count_alive(grid_s)))
+
+// serial run — timed with clock() (wall-clock milliseconds)
+let t0 = clock()
+let gs = run_serial(grid_s, w, h, turns)
+let t1 = clock()
+let ms_s = t1 - t0
+println("serial:      " + str(ms_s) + " ms   alive=" + str(count_alive(gs)))
+
+// parallel run — same grid size, same turn count, different execution path
+let t2 = clock()
+let gp = run_parallel(grid_p, w, h, turns, nthreads)
+let t3 = clock()
+let ms_p = t3 - t2
+println("parallel:    " + str(ms_p) + " ms   alive=" + str(count_alive(gp)))
+
+// expected output (recorded on Intel Core i7-11370H @ 3.30GHz, Windows 11):
+//   Nova GoL  512x512  turns=1000  threads=4
+//   initial alive: 104858
+//   serial:      43160 ms   alive=6135
+//   parallel:    21319 ms   alive=6135  (2.02x speedup)

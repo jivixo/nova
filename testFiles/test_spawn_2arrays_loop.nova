@@ -1,0 +1,45 @@
+// Two arrays, spawn in loop — matches test_gol_debug pattern
+
+fn transform(grid, next, w, start, end) {
+    let y = start
+    while y < end {
+        let x = 0
+        while x < w {
+            next[y * w + x] = grid[y * w + x] + 1
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+fn run_parallel(grid, next, w, h, nthreads) {
+    let chunk = h / nthreads
+    let handles = make_array(nthreads, 0)
+    let t = 0
+    while t < nthreads {
+        let start = t * chunk
+        let end   = if t == nthreads - 1 { h } else { start + chunk }
+        handles[t] = spawn transform(grid, next, w, start, end)
+        t = t + 1
+    }
+    t = 0
+    while t < nthreads {
+        wait(handles[t])
+        t = t + 1
+    }
+    0
+}
+
+let w = 4
+let h = 4
+let grid = make_array(w * h, 0)
+let next = make_array(w * h, 0)
+let i = 0
+while i < w * h {
+    grid[i] = i
+    i = i + 1
+}
+run_parallel(grid, next, w, h, 4)
+println("next[0]=" + str(next[0]) + " next[15]=" + str(next[15]))
+// expect: 1 16

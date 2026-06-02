@@ -1,0 +1,180 @@
+// test_stress_scoping.nova — try to break scoping, closures, and variable capture
+
+fn assert(label, got, expected) {
+    if got == expected {
+        print "ok: {label}"
+    } else {
+        print "FAIL: {label} — got {got}, expected {expected}"
+    }
+}
+
+// ── 1. function modifies captured global ──────────────────────────────────
+print "--- 1. function writes to outer var ---"
+let counter = 0
+fn inc() { counter = counter + 1 }
+inc()
+inc()
+inc()
+assert("outer counter after 3 calls", counter, 3)
+
+// ── 2. multiple functions share same outer var ────────────────────────────
+print "--- 2. two fns share outer ---"
+let shared = 10
+fn add_shared(n) { shared = shared + n }
+fn mul_shared(n) { shared = shared * n }
+add_shared(5)   // shared = 15
+mul_shared(2)   // shared = 30
+assert("shared after add+mul", shared, 30)
+
+// ── 3. loop closures capture snapshot, not live ref ───────────────────────
+print "--- 3. loop closure capture ---"
+let fns = []
+for i in 0..5 {
+    let snap = i
+    fns = push(fns, (x) -> x + snap)
+}
+assert("fns[0](0)", fns[0](0), 0)
+assert("fns[2](0)", fns[2](0), 2)
+assert("fns[4](0)", fns[4](0), 4)
+
+// ── 4. closure returned from function captures local ─────────────────────
+print "--- 4. returned closure captures local ---"
+fn make_counter(start) {
+    let n = start
+    () -> {
+        n = n + 1
+        n
+    }
+}
+let c = make_counter(0)
+let v1 = c()
+let v2 = c()
+let v3 = c()
+assert("counter call 1", v1, 1)
+assert("counter call 2", v2, 2)
+assert("counter call 3", v3, 3)
+
+// ── 5. two independent counters don't interfere ───────────────────────────
+print "--- 5. independent counters ---"
+let ca = make_counter(0)
+let cb = make_counter(100)
+ca()
+ca()
+cb()
+let ra = ca()   // should be 3
+let rb = cb()   // should be 102
+assert("counter a", ra, 3)
+assert("counter b", rb, 102)
+
+// ── 6. closure captures multiple variables ───────────────────────────────
+print "--- 6. multi-var capture ---"
+fn make_clamp(lo, hi) {
+    (x) -> {
+        if x < lo { return lo }
+        if x > hi { return hi }
+        x
+    }
+}
+let clamp = make_clamp(0, 100)
+assert("clamp(-5)", clamp(-5), 0)
+assert("clamp(50)", clamp(50), 50)
+assert("clamp(200)", clamp(200), 100)
+
+// ── 7. nested lambda reads from outer local (read capture) ───────────────
+print "--- 7. nested fn scope ---"
+fn outer_fn() {
+    let x = 10
+    let get_x = () -> x
+    get_x() * 2
+}
+assert("nested fn result", outer_fn(), 20)
+
+// ── 8. shadowing: inner let doesn't affect outer ──────────────────────────
+print "--- 8. shadowing ---"
+let shadow = 42
+fn shadow_test() {
+    let shadow = 99
+    shadow
+}
+let result = shadow_test()
+assert("shadow inside fn", result, 99)
+assert("shadow in outer unchanged", shadow, 42)
+
+// ── 9. parameter shadows global ──────────────────────────────────────────
+print "--- 9. param shadows global ---"
+let param_name = "global"
+fn param_test(param_name) {
+    param_name
+}
+assert("param shadow result", param_test("local"), "local")
+assert("global unchanged", param_name, "global")
+
+// ── 10. closure composition chain ────────────────────────────────────────
+print "--- 10. closure chain ---"
+fn pipeline(fs, x) {
+    let v = x
+    for f in fs {
+        v = f(v)
+    }
+    v
+}
+let steps = [
+    (x) -> x + 1,
+    (x) -> x * 2,
+    (x) -> x - 3
+]
+assert("pipeline(5)", pipeline(steps, 5), 9)   // ((5+1)*2)-3=9
+let steps2 = [
+    (x) -> x * x,
+    (x) -> x + 10
+]
+assert("pipeline(4)", pipeline(steps2, 4), 26)   // 4*4+10=26
+
+// ── 11. recursive closure via fn name ────────────────────────────────────
+print "--- 11. recursive fn ---"
+fn sum_to(n) {
+    if n <= 0 { return 0 }
+    n + sum_to(n - 1)
+}
+assert("sum_to(10)", sum_to(10), 55)
+assert("sum_to(0)", sum_to(0), 0)
+
+// ── 12. higher-order fn modifies outer via closure arg ───────────────────
+print "--- 12. HOF side effect ---"
+let side_total = 0
+let nums = [1, 2, 3, 4, 5]
+for n in nums {
+    side_total = side_total + n
+}
+assert("side_total", side_total, 15)
+
+// ── 13. let redeclaration in same scope ──────────────────────────────────
+print "--- 13. let re-declare ---"
+let reuse = 1
+let reuse = 2
+let reuse = reuse + 10
+assert("let reuse", reuse, 12)
+
+// ── 14. function defined after use (hoisting?) ───────────────────────────
+print "--- 14. forward call ---"
+fn call_forward() {
+    forward_fn(7)
+}
+fn forward_fn(x) {
+    x * 2
+}
+assert("forward call", call_forward(), 14)
+
+// ── 15. closure outlives its creating scope ──────────────────────────────
+print "--- 15. closure outlives scope ---"
+fn make_adder_fn(n) {
+    (x) -> x + n
+}
+let add100 = make_adder_fn(100)
+let add200 = make_adder_fn(200)
+// creating fn long gone, closures still work
+assert("add100(5)", add100(5), 105)
+assert("add200(5)", add200(5), 205)
+assert("add100(add200(0))", add100(add200(0)), 300)
+
+print "done"

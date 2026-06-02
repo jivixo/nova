@@ -1,0 +1,54 @@
+// VM benchmark — tree-walker vs bytecode VM
+// All sections use only Phase 8 features (Parts 1-5)
+
+// 1. Recursive fibonacci — deep call stack + branching
+fn fib(n) {
+    if n <= 1 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+print fib(30)       // 832040
+
+// 2. Arithmetic loop — 1,000,000 iterations
+let sum = 0
+let i = 0
+while i < 1000000 {
+    sum = sum + i
+    i = i + 1
+}
+print sum           // 499999500000
+
+// 3. Nested loop — 1000x1000
+let cells = 0
+for r in 0..1000 {
+    for c in 0..1000 {
+        cells = cells + 1
+    }
+}
+print cells         // 1000000
+
+// 4. String building — 10000 concatenations
+let s = ""
+let k = 0
+while k < 10000 {
+    s = s + "x"
+    k = k + 1
+}
+print len(s)        // 10000
+
+// 5. Array ops — push 10000 elements then sum
+let arr = []
+let j = 0
+while j < 10000 {
+    arr = push(arr, j)
+    j = j + 1
+}
+let total = 0
+for n in arr { total = total + n }
+print total         // 49995000
+
+// 6. Recursive sum — function call overhead
+fn rsum(n) {
+    if n <= 0 { return 0 }
+    return n + rsum(n - 1)
+}
+print rsum(1000)    // 500500

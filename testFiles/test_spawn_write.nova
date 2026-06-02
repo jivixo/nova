@@ -1,0 +1,17 @@
+// Minimal test: does a spawned worker's array write propagate back to caller?
+// Expected if shared:      "42 42 42"
+// Expected if deep-cloned: "0 0 0"
+
+fn fill(arr, val) {
+    let i = 0
+    while i < len(arr) {
+        arr[i] = val
+        i = i + 1
+    }
+    0
+}
+
+let a = make_array(10, 0)
+let h = spawn fill(a, 42)
+wait(h)
+println(str(a[0]) + " " + str(a[5]) + " " + str(a[9]))

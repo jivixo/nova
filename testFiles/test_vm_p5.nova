@@ -1,0 +1,75 @@
+// Phase 8 Part 5 — VM arrays, hashmaps, string interpolation
+
+// ── 1. array literal & index ─────────────────────────────────────
+let a = [10, 20, 30]
+print a[0]      // 10
+print a[1]      // 20
+print a[2]      // 30
+print a[-1]     // 30
+
+// ── 2. array mutation ────────────────────────────────────────────
+a[0] = 99
+print a[0]      // 99
+
+// ── 3. push / pop / len ──────────────────────────────────────────
+let b = [1, 2, 3]
+b = push(b, 4)
+print len(b)    // 4
+b = pop(b)
+print len(b)    // 3
+print b[0]      // 1
+
+// ── 4. for loop over array ───────────────────────────────────────
+let sum = 0
+for x in [1, 2, 3, 4, 5] { sum = sum + x }
+print sum       // 15
+
+// ── 5. sort / reverse ────────────────────────────────────────────
+let nums = [3, 1, 4, 1, 5]
+nums = sort(nums)
+print nums[0]   // 1
+print nums[4]   // 5
+nums = reverse(nums)
+print nums[0]   // 5
+
+// ── 6. split / join ──────────────────────────────────────────────
+let words = split("hello world nova", " ")
+print words[0]  // hello
+print words[2]  // nova
+print len(words) // 3
+let rejoined = join(words, "-")
+print rejoined  // hello-world-nova
+
+// ── 7. hashmap literal & index ───────────────────────────────────
+let m = {"name": "Nova", "version": 1}
+print m["name"]     // Nova
+print m["version"]  // 1
+
+// ── 8. hashmap mutation ──────────────────────────────────────────
+m["version"] = 2
+print m["version"]  // 2
+m["author"] = "jivit"
+print m["author"]   // jivit
+
+// ── 9. keys ──────────────────────────────────────────────────────
+let k = keys({"x": 1, "y": 2})
+print len(k)    // 2
+
+// ── 10. string interpolation ─────────────────────────────────────
+let name = "Nova"
+let ver = 8
+print "lang={name} phase={ver}"    // lang=Nova phase=8
+
+let count = 42
+print "count is {count}"           // count is 42
+
+// ── 11. interpolation in function ────────────────────────────────
+fn greet(who) {
+    return "hello {who}!"
+}
+print greet("world")    // hello world!
+
+// ── 12. contains ─────────────────────────────────────────────────
+print contains([1, 2, 3], 2)    // true
+print contains([1, 2, 3], 9)    // false
+print contains("hello", "ell")  // true

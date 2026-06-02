@@ -1,0 +1,89 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// Use a channel as a log: each send appends to the trace we can read back
+let trace = channel()
+
+// ── basic: defer runs after function body ─────────────────────────────────────
+fn basic() {
+    defer send(trace, "deferred")
+    send(trace, "body")
+}
+basic()
+check("body fires first",       recv(trace), "body")
+check("deferred fires after",   recv(trace), "deferred")
+
+// ── LIFO: last defer registered runs first ────────────────────────────────────
+fn lifo() {
+    defer send(trace, 1)
+    defer send(trace, 2)
+    defer send(trace, 3)
+}
+lifo()
+check("LIFO: d3 runs first",  recv(trace), 3)
+check("LIFO: d2 runs second", recv(trace), 2)
+check("LIFO: d1 runs last",   recv(trace), 1)
+
+// ── defer runs even on early return ──────────────────────────────────────────
+fn early(x) {
+    defer send(trace, "cleanup")
+    if x > 0 { return "early" }
+    return "late"
+}
+let r = early(5)
+check("early return value",     r,           "early")
+check("defer ran on early ret", recv(trace), "cleanup")
+
+// ── defer in a nested call: each function has its own defer frame ─────────────
+fn inner() {
+    defer send(trace, "inner-defer")
+    send(trace, "inner-body")
+}
+fn outer() {
+    defer send(trace, "outer-defer")
+    send(trace, "outer-body")
+    inner()
+}
+outer()
+check("outer body",         recv(trace), "outer-body")
+check("inner body",         recv(trace), "inner-body")
+check("inner defer",        recv(trace), "inner-defer")
+check("outer defer last",   recv(trace), "outer-defer")
+
+// ── timeout fires after delay ─────────────────────────────────────────────────
+let t = timeout(50)
+let fired = false
+select {
+    case t -> _ { let fired = true }
+}
+check("timeout fires", fired, true)
+
+// ── timeout: non-blocking check before it fires, then blocking wait ───────────
+let t2 = timeout(200)
+let pre = false
+select {
+    case t2 -> _ { let pre = true }
+    default {}
+}
+check("timeout not yet", pre, false)
+select {
+    case t2 -> _ { let pre = true }
+}
+check("timeout eventually fires", pre, true)
+
+// ── ticker fires multiple times ───────────────────────────────────────────────
+let tick = ticker(30)
+let count = 0
+while count < 3 {
+    select {
+        case tick -> _ { let count = count + 1 }
+    }
+}
+check("ticker fires 3 times", count, 3)
+
+println("all defer/timer tests passed")

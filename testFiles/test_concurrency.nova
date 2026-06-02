@@ -1,0 +1,53 @@
+// Part 8 — concurrency: spawn, wait, chan, send, recv
+
+// Basic spawn/wait — no captures needed
+fn square(n) { n * n }
+
+let t1 = spawn square(5)
+let t2 = spawn square(10)
+print wait(t1)   // 25
+print wait(t2)   // 100
+
+// Spawn captures an outer variable
+let base = 7
+let t3 = spawn (base * base)
+print wait(t3)   // 49
+
+// Spawn a heavier computation
+fn sum_to(n) {
+    let i = 0
+    let s = 0
+    while i < n {
+        s = s + i
+        i = i + 1
+    }
+    s
+}
+
+let t4 = spawn sum_to(100)
+let t5 = spawn sum_to(200)
+print wait(t4)   // 4950
+print wait(t5)   // 19900
+
+// Channel: single producer, main thread receives
+let ch = chan()
+let sender = spawn send(ch, 42)
+let v = recv(ch)
+print v          // 42
+wait(sender)
+
+// Channel: send a computed value
+let ch2 = chan()
+let worker = spawn send(ch2, square(13))
+print recv(ch2)  // 169
+wait(worker)
+
+// Two workers writing to two channels
+let ca = chan()
+let cb = chan()
+let wa = spawn send(ca, sum_to(50))
+let wb = spawn send(cb, sum_to(10))
+print recv(ca)   // 1225
+print recv(cb)   // 45
+wait(wa)
+wait(wb)

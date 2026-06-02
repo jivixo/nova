@@ -1,0 +1,78 @@
+// test_item4.nova — optional semicolons as statement terminators
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// semicolons between top-level lets are ignored cleanly
+let a = 1;
+let b = 2;
+check("semicolons between lets", a + b, 3)
+
+// semicolons inside a block body
+fn add(x, y) {
+    let s = x + y;
+    s
+}
+check("semicolons in fn body", add(3, 4), 7)
+
+// trailing semicolons after expressions in a block
+fn mul_body(x, y) {
+    let r = x * y;
+    r;
+}
+check("trailing semicolon after expr", mul_body(6, 7), 42)
+
+// trailing semicolon after a while loop in a block
+fn sum_to(n) {
+    let acc = 0;
+    let i = 0;
+    while i <= n {
+        acc = acc + i;
+        i = i + 1;
+    };
+    acc
+}
+check("semicolon after while block", sum_to(4), 10)
+
+// The core ASI fix: hashmap literal ; lambda on next line
+// Without semicolon the parser reads {}(n) as a dynamic call.
+fn make_memoized(f) {
+    let cache = {};
+    let memoized = (n) -> {
+        let key = str(n);
+        if hasKey(cache, key) {
+            cache[key]
+        } else {
+            let result = f(n);
+            cache = setKey(cache, key, result);
+            result
+        }
+    };
+    memoized
+}
+let memo_sq = make_memoized((n) -> n * n)
+check("memoized call 1", memo_sq(7), 49)
+check("memoized call 2", memo_sq(5), 25)
+
+// array literal ; lambda — same class of issue; lambda references arr so it's used
+fn make_doubler() {
+    let arr = [2];
+    let f = (x) -> arr[0] * x;
+    f
+}
+let dbl = make_doubler()
+check("array literal then semicolon then lambda", dbl(8), 16)
+
+// semicolons after if expressions
+fn classify(n) {
+    let label = if n > 0 { "pos" } else { "nonpos" };
+    label
+}
+check("semicolon after if expr", classify(5),  "pos")
+check("semicolon after if expr neg", classify(-1), "nonpos")
+
+print("done")

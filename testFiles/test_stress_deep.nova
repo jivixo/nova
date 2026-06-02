@@ -1,0 +1,223 @@
+// test_stress_deep.nova — deep recursion, large data, HOF chains, mutation under load
+
+fn assert(label, got, expected) {
+    if got == expected {
+        print "ok: {label}"
+    } else {
+        print "FAIL: {label} — got {got}, expected {expected}"
+    }
+}
+
+// ── 1. deep recursion ────────────────────────────────────────────────────
+print "--- 1. deep recursion ---"
+fn count_down(n) {
+    if n <= 0 { return 0 }
+    1 + count_down(n - 1)
+}
+assert("count_down(500)", count_down(500), 500)
+assert("count_down(1000)", count_down(1000), 1000)
+
+// ── 2. mutual recursion ──────────────────────────────────────────────────
+print "--- 2. mutual recursion ---"
+fn is_even(n) {
+    if n == 0 { return true }
+    is_odd(n - 1)
+}
+fn is_odd(n) {
+    if n == 0 { return false }
+    is_even(n - 1)
+}
+assert("is_even(0)", is_even(0), true)
+assert("is_odd(1)", is_odd(1), true)
+assert("is_even(100)", is_even(100), true)
+assert("is_odd(99)", is_odd(99), true)
+assert("is_even(201)", is_even(201), false)
+
+// ── 3. fibonacci (recursive) ─────────────────────────────────────────────
+print "--- 3. fibonacci ---"
+fn fib(n) {
+    if n <= 1 { return n }
+    fib(n - 1) + fib(n - 2)
+}
+assert("fib(0)", fib(0), 0)
+assert("fib(1)", fib(1), 1)
+assert("fib(10)", fib(10), 55)
+assert("fib(15)", fib(15), 610)
+assert("fib(20)", fib(20), 6765)
+
+// ── 4. fibonacci (iterative, large n) ────────────────────────────────────
+print "--- 4. fib iterative ---"
+fn fib_iter(n) {
+    if n <= 1 { return n }
+    let a = 0
+    let b = 1
+    for i in 2..n+1 {
+        let tmp = a + b
+        a = b
+        b = tmp
+    }
+    b
+}
+assert("fib_iter(30)", fib_iter(30), 832040)
+assert("fib_iter(40)", fib_iter(40), 102334155)
+assert("fib_iter(50)", fib_iter(50), 12586269025)
+
+// ── 5. large array construction ──────────────────────────────────────────
+print "--- 5. large array ---"
+let big_arr = []
+for i in 0..1000 {
+    big_arr = push(big_arr, i * 2)
+}
+assert("big_arr len", len(big_arr), 1000)
+assert("big_arr[0]", big_arr[0], 0)
+assert("big_arr[499]", big_arr[499], 998)
+assert("big_arr[999]", big_arr[999], 1998)
+assert("sum big_arr", sum(big_arr), 999000)
+
+// ── 6. HOF chain on large array ──────────────────────────────────────────
+print "--- 6. HOF chain ---"
+let base = []
+for i in 1..101 {
+    base = push(base, i)
+}
+// keep evens, double them, sum
+let evens = filter(base, (x) -> x % 2 == 0)
+let doubled = map(evens, (x) -> x * 2)
+let total = sum(doubled)
+assert("evens count", len(evens), 50)
+assert("doubled sum", total, 5100)   // sum of 2*2,4*2,...,100*2 = 2*(2+4+...+100) = 2*2550 = 5100
+
+// ── 7. reduce ────────────────────────────────────────────────────────────
+print "--- 7. reduce ---"
+let arr_r = []
+for i in 1..11 { arr_r = push(arr_r, i) }
+let product_r = reduce(arr_r, 1, (acc, x) -> acc * x)
+assert("product 1..10", product_r, 3628800)   // 10!
+let concat_r = reduce(["a","b","c","d"], "", (acc, x) -> acc + x)
+assert("reduce concat", concat_r, "abcd")
+
+// ── 8. deeply nested data structures ─────────────────────────────────────
+print "--- 8. deep nesting ---"
+// build a chain: {val:0, next: {val:1, next: {val:2, ...}}}
+let node = {"val": 9, "next": nil}
+let ni = 8
+while ni >= 0 {
+    node = {"val": ni, "next": node}
+    ni = ni - 1
+}
+// traverse the chain
+let depth = 0
+let cur = node
+while cur != nil {
+    depth = depth + 1
+    cur = cur["next"]
+}
+assert("chain depth", depth, 10)
+
+// ── 9. large hashmap ─────────────────────────────────────────────────────
+print "--- 9. large hashmap ---"
+let hm = {}
+for i in 0..200 {
+    hm = setKey(hm, str(i), i * i)
+}
+assert("hm len", len(keys(hm)), 200)
+assert("hm[\"0\"]", hm["0"], 0)
+assert("hm[\"9\"]", hm["9"], 81)
+assert("hm[\"99\"]", hm["99"], 9801)
+assert("hm[\"199\"]", hm["199"], 39601)
+
+// ── 10. nested loops ─────────────────────────────────────────────────────
+print "--- 10. nested loops ---"
+let matrix_sum = 0
+for i in 0..20 {
+    for j in 0..20 {
+        matrix_sum = matrix_sum + (i * 20 + j)
+    }
+}
+assert("20x20 matrix sum", matrix_sum, 79800)   // sum 0..399 = 399*400/2 = 79800
+
+// ── 11. string building ───────────────────────────────────────────────────
+print "--- 11. string building ---"
+let s = ""
+for i in 0..100 {
+    s = s + "x"
+}
+assert("string len 100", len(s), 100)
+let s2 = ""
+for i in 0..50 {
+    s2 = s2 + str(i % 10)
+}
+assert("digit string len", len(s2), 50)
+assert("digit string first", substr(s2, 0, 1), "0")
+
+// ── 12. sort large array ──────────────────────────────────────────────────
+print "--- 12. sort large ---"
+let unsorted = []
+let ui = 999
+while ui >= 0 {
+    unsorted = push(unsorted, ui)
+    ui = ui - 1
+}
+let sorted_big = sort(unsorted)
+assert("sorted len", len(sorted_big), 1000)
+assert("sorted[0]", sorted_big[0], 0)
+assert("sorted[999]", sorted_big[999], 999)
+assert("sorted[500]", sorted_big[500], 500)
+
+// ── 13. closures under load ───────────────────────────────────────────────
+print "--- 13. closures under load ---"
+fn make_pow(exp) {
+    (base) -> {
+        let result = 1
+        for i in 0..exp {
+            result = result * base
+        }
+        result
+    }
+}
+let sq  = make_pow(2)
+let cub = make_pow(3)
+let pow5 = make_pow(5)
+assert("sq(7)", sq(7), 49)
+assert("cub(3)", cub(3), 27)
+assert("pow5(2)", pow5(2), 32)
+// apply to an array
+let bases = [1, 2, 3, 4, 5]
+let squares = map(bases, sq)
+assert("squares[4]", squares[4], 25)
+assert("sum squares", sum(squares), 55)   // 1+4+9+16+25
+
+// ── 14. recursive accumulation ────────────────────────────────────────────
+print "--- 14. recursive accumulator ---"
+fn flatten(arr) {
+    let result = []
+    for item in arr {
+        if type(item) == "array" {
+            let sub = flatten(item)
+            result = result + sub
+        } else {
+            result = push(result, item)
+        }
+    }
+    result
+}
+let nested = [[1, 2], [3, [4, 5]], [6]]
+let flat = flatten(nested)
+assert("flatten len", len(flat), 6)
+assert("flatten[0]", flat[0], 1)
+assert("flatten[3]", flat[3], 4)
+assert("flatten[5]", flat[5], 6)
+
+// ── 15. many short-lived function calls ──────────────────────────────────
+print "--- 15. call pressure ---"
+fn add(a, b) { a + b }
+fn call_n_times(n) {
+    let acc = 0
+    for i in 0..n {
+        acc = add(acc, i)
+    }
+    acc
+}
+assert("call 1000 times", call_n_times(1000), 499500)
+
+print "done"

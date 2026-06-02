@@ -1,0 +1,42 @@
+// Test: worker_fill called DIRECTLY vs via spawn — which one writes?
+
+fn worker_fill(grid, next, w, h, start, end) {
+    let y = start
+    while y < end {
+        let x = 0
+        while x < w {
+            next[y * w + x] = grid[y * w + x] + 1
+            x = x + 1
+        }
+        y = y + 1
+    }
+    0
+}
+
+let w = 4
+let h = 4
+
+let grid1 = make_array(w * h, 0)
+let next1 = make_array(w * h, 0)
+let i = 0
+while i < w * h {
+    grid1[i] = i
+    i = i + 1
+}
+
+// Direct call
+worker_fill(grid1, next1, w, h, 0, h)
+println("direct: next1[0]=" + str(next1[0]) + " next1[15]=" + str(next1[15]))
+
+let grid2 = make_array(w * h, 0)
+let next2 = make_array(w * h, 0)
+i = 0
+while i < w * h {
+    grid2[i] = i
+    i = i + 1
+}
+
+// Via spawn
+let h2 = spawn worker_fill(grid2, next2, w, h, 0, h)
+wait(h2)
+println("spawn:  next2[0]=" + str(next2[0]) + " next2[15]=" + str(next2[15]))

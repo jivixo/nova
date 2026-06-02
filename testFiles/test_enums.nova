@@ -1,0 +1,117 @@
+// ── Basic unit enum ───────────────────────────────────────────────────────────
+enum Direction { North, South, East, West }
+
+let d = Direction.North
+print type(d)                          // enum:Direction:North
+print d                                // Direction.North
+print (d == Direction.North)           // true
+print (d == Direction.South)           // false
+
+// ── match on unit enum ────────────────────────────────────────────────────────
+fn describe_dir(dir) {
+    match dir {
+        Direction.North => "going north"
+        Direction.South => "going south"
+        Direction.East  => "going east"
+        Direction.West  => "going west"
+        _ => "unknown"
+    }
+}
+
+print describe_dir(Direction.North)    // going north
+print describe_dir(Direction.West)     // going west
+print describe_dir(Direction.East)     // going east
+
+// ── Payload enum ─────────────────────────────────────────────────────────────
+enum Shape { Circle(r), Rect(w, h), Point }
+
+let c = Shape.Circle(5)
+let r = Shape.Rect(3, 4)
+let p = Shape.Point
+
+print c                                // Shape.Circle(5)
+print r                                // Shape.Rect(3, 4)
+print p                                // Shape.Point
+print type(c)                          // enum:Shape:Circle
+print type(p)                          // enum:Shape:Point
+
+// ── match with payload bindings ───────────────────────────────────────────────
+fn area(shape) {
+    match shape {
+        Shape.Circle(r) => 3 * r * r
+        Shape.Rect(w, h) => w * h
+        Shape.Point => 0
+        _ => -1
+    }
+}
+
+print area(Shape.Circle(5))            // 75
+print area(Shape.Rect(3, 4))           // 12
+print area(Shape.Point)                // 0
+
+// ── enum in array ─────────────────────────────────────────────────────────────
+let dirs = [Direction.North, Direction.East, Direction.South, Direction.West]
+for d in dirs {
+    printn describe_dir(d)
+    printn " "
+}
+print ""
+
+// ── nested match: match inside match body ─────────────────────────────────────
+enum Color { Red, Green, Blue }
+enum Pixel { Colored(c), Transparent }
+
+let px = Pixel.Colored(Color.Red)
+let pt = Pixel.Transparent
+
+fn pixel_str(px) {
+    match px {
+        Pixel.Colored(c) => {
+            match c {
+                Color.Red   => "red pixel"
+                Color.Green => "green pixel"
+                Color.Blue  => "blue pixel"
+                _ => "unknown color"
+            }
+        }
+        Pixel.Transparent => "transparent"
+        _ => "unknown pixel"
+    }
+}
+
+print pixel_str(px)                    // red pixel
+print pixel_str(Pixel.Colored(Color.Blue)) // blue pixel
+print pixel_str(pt)                    // transparent
+
+// ── enum as function argument ──────────────────────────────────────────────────
+fn is_north(d) { d == Direction.North }
+print is_north(Direction.North)        // true
+print is_north(Direction.South)        // false
+
+// ── enum stored in struct ──────────────────────────────────────────────────────
+struct Player { name, direction }
+let hero = Player { name: "Alice", direction: Direction.North }
+print hero.direction                   // Direction.North
+print describe_dir(hero.direction)     // going north
+
+// ── enum constructor stored as variable ───────────────────────────────────────
+let make_circle = Shape.Circle
+let c2 = make_circle(10)
+print c2                               // Shape.Circle(10)
+print area(c2)                         // 300
+
+// ── type of EnumDef ───────────────────────────────────────────────────────────
+print type(Direction)                  // enumdef
+print type(Shape)                      // enumdef
+
+// ── match returns value ────────────────────────────────────────────────────────
+let result = match Direction.South {
+    Direction.North => 1
+    Direction.South => 2
+    Direction.East  => 3
+    Direction.West  => 4
+    _ => 0
+}
+print result                           // 2
+
+print "all enum tests passed"

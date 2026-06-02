@@ -1,0 +1,14 @@
+// Pipe |> — desugared to Call by parser
+
+fn double(x) { x * 2 }
+fn add_one(x) { x + 1 }
+fn add(x, y) { x + y }
+
+print 5 |> double()         // 10
+print 5 |> add_one()        // 6
+print 5 |> double() |> add_one()    // 11
+print 3 |> add(7)           // 10  (3 inserted as first arg, 7 as second)
+
+let s = "hello"
+print s |> upper()          // HELLO
+print "  hi  " |> trim()    // hi

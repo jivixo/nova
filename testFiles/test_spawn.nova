@@ -1,0 +1,81 @@
+// Phase 10 Part 3 — spawn + wait stress test
+
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── basic spawn + wait ────────────────────────────────────────────────────────
+fn double(n) { n * 2 }
+
+let t = spawn double(21)
+check("basic spawn + wait", wait(t), 42)
+
+// ── spawn returns correct type ────────────────────────────────────────────────
+fn identity(x) { x }
+
+let t2 = spawn identity("hello")
+check("spawn returns string", wait(t2), "hello")
+
+// ── 5 independent tasks, verify all results ───────────────────────────────────
+fn square(n) { n * n }
+
+let t1 = spawn square(1)
+let t3 = spawn square(2)
+let t4 = spawn square(3)
+let t5 = spawn square(4)
+let t6 = spawn square(5)
+
+check("spawn 5 tasks: 1*1", wait(t1), 1)
+check("spawn 5 tasks: 2*2", wait(t3), 4)
+check("spawn 5 tasks: 3*3", wait(t4), 9)
+check("spawn 5 tasks: 4*4", wait(t5), 16)
+check("spawn 5 tasks: 5*5", wait(t6), 25)
+
+// ── share-nothing: mutation in spawned task doesn't affect parent ─────────────
+// push returns the new array — use len(push(...)) to measure the extended copy
+fn count_with_extra(arr) {
+    len(push(arr, 99))
+}
+
+let original = [1, 2, 3]
+let tm = spawn count_with_extra(original)
+let task_len = wait(tm)
+check("spawned task sees deep-cloned array (len 4)", task_len, 4)
+check("parent array unmodified after spawn", len(original), 3)
+
+// ── task produces a value used in further computation ────────────────────────
+fn fib(n) {
+    if n <= 1 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+let tf = spawn fib(10)
+let result = wait(tf) * 2
+check("fib(10)*2 via spawn", result, 110)
+
+// ── spawn with array result ───────────────────────────────────────────────────
+// build array recursively — each push is on a unique Arc (count==1), mutates in place
+fn make_range(n) {
+    if n == 0 { [] }
+    else {
+        let rest = make_range(n - 1)
+        push(rest, n - 1)
+    }
+}
+
+let ta = spawn make_range(5)
+let arr = wait(ta)
+check("spawn returns array length", len(arr), 5)
+check("spawn returns array value 0", arr[0], 0)
+check("spawn returns array value 4", arr[4], 4)
+
+// ── type() and str() on task ──────────────────────────────────────────────────
+fn noop() { nil }
+let tt = spawn noop()
+check("type() of task", type(tt), "task")
+wait(tt)
+
+println("all spawn tests passed")

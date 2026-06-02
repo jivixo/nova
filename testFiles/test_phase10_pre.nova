@@ -1,0 +1,178 @@
+// test_phase10_pre.nova — stress test for Phase 10 prep fixes:
+//   1. Scoping bug: global mutation inside functions
+//   2. Type annotation enforcement at runtime
+//   3. New/fixed VM builtins: slice, concat, zip, replace, isX, round, max/min(array)
+//   4. Line numbers in VM error messages (visual — errors show "Error on line N:")
+
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── 1. Scoping bug: global mutation inside functions ──────────────────────────
+
+let counter = 0
+fn increment() {
+    counter = counter + 1
+}
+increment()
+increment()
+increment()
+check("global mut after 3 calls", counter, 3)
+
+let total = 100
+fn deduct(amount) {
+    total = total - amount
+}
+deduct(30)
+deduct(20)
+check("global mut with param", total, 50)
+
+let flag = false
+fn set_flag() {
+    flag = true
+}
+set_flag()
+check("global bool mut in fn", flag, true)
+
+let acc = ""
+fn append(s) {
+    acc = acc + s
+}
+append("hello")
+append(" ")
+append("world")
+check("global string mut in fn", acc, "hello world")
+
+// multiple globals mutated by one function
+let a = 1
+let b = 2
+fn swap() {
+    let tmp = a
+    a = b
+    b = tmp
+}
+swap()
+check("swap globals a", a, 2)
+check("swap globals b", b, 1)
+
+// closure should NOT write back (it captures a snapshot)
+let x = 10
+let incr = () -> { x = x + 1 }
+incr()
+check("closure does not mutate outer x", x, 10)
+
+// recursive global counter
+let steps = 0
+fn countdown(n) {
+    if n > 0 {
+        steps = steps + 1
+        countdown(n - 1)
+    }
+}
+countdown(5)
+check("recursive global counter", steps, 5)
+
+// ── 2. Type annotation enforcement at runtime ─────────────────────────────────
+
+fn typed_add(x: int, y: int) {
+    x + y
+}
+check("typed params int+int", typed_add(3, 4), 7)
+
+fn greet(name: string) {
+    "hello " + name
+}
+check("typed param string", greet("world"), "hello world")
+
+fn negate(b: bool) {
+    !b
+}
+check("typed param bool true", negate(true), false)
+check("typed param bool false", negate(false), true)
+
+fn double(n: float) {
+    n * 2.0
+}
+check("typed param float", double(3.5), 7.0)
+
+// int widens to float — should pass type check
+fn scale(n: float) {
+    n * 10.0
+}
+check("int widens to float param", scale(3), 30.0)
+
+// ── 3. New/fixed VM builtins ──────────────────────────────────────────────────
+
+// replace
+check("replace basic", replace("hello world", "world", "nova"), "hello nova")
+check("replace all occurrences", replace("aaa", "a", "b"), "bbb")
+check("replace no match", replace("hello", "x", "y"), "hello")
+
+// slice
+let arr = [10, 20, 30, 40, 50]
+check("slice 1..3", slice(arr, 1, 3), [20, 30])
+check("slice from 0", slice(arr, 0, 2), [10, 20])
+check("slice to end", slice(arr, 3, 5), [40, 50])
+
+// concat
+let a1 = [1, 2, 3]
+let a2 = [4, 5, 6]
+check("concat arrays", concat(a1, a2), [1, 2, 3, 4, 5, 6])
+check("concat empty left", concat([], a2), [4, 5, 6])
+check("concat empty right", concat(a1, []), [1, 2, 3])
+
+// zip
+let zipped = zip([1, 2, 3], ["a", "b", "c"])
+check("zip length", len(zipped), 3)
+check("zip first pair", zipped[0], [1, "a"])
+check("zip last pair", zipped[2], [3, "c"])
+
+// round
+check("round whole", round(3.7), 4)
+check("round down", round(3.2), 3)
+check("round 2 decimals", round(3.14159, 2), 3.14)
+check("round 0 decimals on int", round(5), 5)
+
+// max/min single-array form
+check("max of array", max([3, 1, 4, 1, 5, 9, 2, 6]), 9)
+check("min of array", min([3, 1, 4, 1, 5, 9, 2, 6]), 1)
+
+// isX predicates
+check("isInt true",    isInt(42),       true)
+check("isInt false",   isInt(3.14),     false)
+check("isFloat true",  isFloat(3.14),   true)
+check("isFloat false", isFloat(42),     false)
+check("isString true", isString("hi"),  true)
+check("isBool true",   isBool(true),    true)
+check("isArray true",  isArray([1,2]),  true)
+check("isNil true",    isNil(nil),      true)
+check("isNil false",   isNil(0),        false)
+
+let m = {"key": "val"}
+check("isHashmap true",  isHashmap(m),   true)
+check("isHashmap false", isHashmap([1]), false)
+
+// ── 4. Line number in errors (sanity check — errors we can trigger and catch) ─
+
+let caught_div = false
+try {
+    let r = 1 / 0
+} catch e {
+    caught_div = true
+}
+check("div by zero caught", caught_div, true)
+
+let caught_idx = false
+try {
+    let arr2 = [1, 2]
+    let _ = arr2[99]
+} catch e {
+    caught_idx = true
+}
+check("out-of-bounds caught", caught_idx, true)
+
+print("done")

@@ -1,0 +1,44 @@
+// ── STRING GAPS ───────────────────────────────────────────
+print "--- string gaps ---"
+try { print int("abc") }    catch e { print "int(abc): {e}" }
+try { print int("") }       catch e { print "int(): {e}" }
+print int("  42  ")
+
+// ── ARRAY GAPS ────────────────────────────────────────────
+print "--- array gaps ---"
+let nested = [[1,2],[3,4]]
+print nested           // nested arrays — display ok?
+print nested[0][1]     // double index — works?
+
+print sort([])         // empty sort
+print max([])          // max of empty array
+print sum([])          // sum of empty array
+print pop([])          // pop empty array
+
+// ── MATH GAPS ─────────────────────────────────────────────
+print "--- math gaps ---"
+print 1 / 0            // division by zero
+print sqrt(-1)         // sqrt of negative
+print pow(2, -1)       // negative exponent
+print max([])          // already tested above
+
+// ── DEEP RECURSION ────────────────────────────────────────
+print "--- deep recursion ---"
+fn countdown(n) {
+    if n == 0 { return 0 }
+    countdown(n - 1)
+}
+try { print countdown(10000) } catch e { print "recursion: {e}" }
+
+// ── NEGATIVE SHIFT (caesar) ───────────────────────────────
+print "--- negative modulo ---"
+print -1 % 26          // negative mod — what does Nova return?
+print -3 % 26
+
+// ── TYPE SYSTEM EDGE CASES ────────────────────────────────
+// print "--- type checker ---"
+// fn broken(a: int): int {
+//     if a > 0 { return "oops" }
+//     return a
+// }
+// print broken(5)        // should this be caught before running?

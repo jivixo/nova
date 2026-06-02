@@ -1,0 +1,55 @@
+// Part 9 — type specialisation: static-typed arithmetic avoids boxing
+
+// Integer arithmetic (fast path: direct LLVM add/sub/mul/sdiv/srem)
+let a = 10
+let b = 3
+print a + b      // 13
+print a - b      // 7
+print a * b      // 30
+print a / b      // 3
+print a % b      // 1
+
+// Integer comparisons (fast path: icmp)
+print a > b      // true
+print a < b      // false
+print a == b     // false
+print a != b     // true
+print a >= 10    // true
+print b <= 3     // true
+
+// Float arithmetic (fast path: fadd/fsub/fmul/fdiv)
+let x = 2.5
+let y = 1.5
+print x + y      // 4.0
+print x - y      // 1.0
+print x * y      // 3.75
+print x / y      // 1.666...
+
+// Float comparisons
+print x > y      // true
+print x == 2.5   // true
+
+// Inference through variables used in expressions
+let n = 100
+let i = 0
+let s = 0
+while i < n {
+    s = s + i
+    i = i + 1
+}
+print s          // 4950
+
+// Tight integer loop — exercises repeated fast-path arithmetic
+let count = 1000
+let j = 0
+let acc = 0
+while j < count {
+    acc = acc + j
+    j = j + 1
+}
+print acc        // 499500
+
+// Mixed: unknown type falls back to runtime (no crash)
+fn identity(v) { v }
+let z = identity(42)
+print z + 1      // 43 (runtime path, z is Unknown type)

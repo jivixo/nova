@@ -1,0 +1,90 @@
+// Phase 9 Part 2 — Struct stress test
+
+// --- Basic definition and instantiation ---
+struct Point { x, y }
+let p = Point { x: 3, y: 4 }
+print(p.x)   // 3
+print(p.y)   // 4
+
+// --- Field mutation ---
+p.x = 10
+print(p.x)   // 10
+
+// --- Nested struct ---
+struct Rect { origin, size }
+struct Size { w, h }
+let r = Rect {
+    origin: Point { x: 0, y: 0 },
+    size:   Size  { w: 100, h: 50 }
+}
+print(r.size.w)    // 100
+print(r.origin.x)  // 0
+
+// --- Struct in function (pass by reference via Rc) ---
+fn distance(pt) {
+    let dx = pt.x * pt.x
+    let dy = pt.y * pt.y
+    dx + dy
+}
+let q = Point { x: 3, y: 4 }
+print(distance(q))   // 25  (3²+4² = 25, squared distance)
+
+// --- Struct mutation inside function ---
+fn move_point(pt, dx, dy) {
+    pt.x = pt.x + dx
+    pt.y = pt.y + dy
+}
+let m = Point { x: 1, y: 2 }
+move_point(m, 5, 3)
+print(m.x)   // 6
+print(m.y)   // 5
+
+// --- Array of structs ---
+let pts = [Point { x: 1, y: 0 }, Point { x: 2, y: 0 }, Point { x: 3, y: 0 }]
+let i = 0
+let sum = 0
+while i < 3 {
+    sum = sum + pts[i].x
+    i = i + 1
+}
+print(sum)   // 6
+
+// --- Struct returned from function ---
+fn make_point(a, b) {
+    Point { x: a, y: b }
+}
+let t = make_point(7, 8)
+print(t.x)   // 7
+print(t.y)   // 8
+
+// --- type() on struct ---
+print(type(p))   // struct:Point
+
+// --- Field used in expression ---
+let p2 = Point { x: 5, y: 12 }
+print(p2.x * p2.x + p2.y * p2.y)   // 169  (5²+12² = 25+144)
+
+// --- Struct with string fields ---
+struct Person { name, age }
+let person = Person { name: "Alice", age: 30 }
+print(person.name)   // Alice
+print(person.age)    // 30
+person.age = 31
+print(person.age)    // 31
+
+// --- Struct in while loop accumulation ---
+struct Counter { val }
+let c = Counter { val: 0 }
+let j = 0
+while j < 10 {
+    c.val = c.val + j
+    j = j + 1
+}
+print(c.val)   // 45  (0+1+2+...+9)
+
+// --- Nested field mutation ---
+let rect2 = Rect { origin: Point { x: 0, y: 0 }, size: Size { w: 10, h: 20 } }
+rect2.size.w = 999
+print(rect2.size.w)   // 999
+
+print("done")

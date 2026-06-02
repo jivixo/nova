@@ -1,0 +1,100 @@
+print "--- exact values ---"
+let score = 100
+match score {
+    100 => print "perfect"
+    90  => print "great"
+    _   => print "ok"
+}
+match score {
+    99 => print "wrong"
+    _  => print "wildcard hit"
+}
+
+print "--- range patterns ---"
+fn grade(s) {
+    match s {
+        90..101 => "A"
+        70..90  => "B"
+        50..70  => "C"
+        _       => "F"
+    }
+}
+print grade(100)
+print grade(90)
+print grade(89)
+print grade(70)
+print grade(50)
+print grade(49)
+print grade(0)
+print grade(101)
+
+print "--- string patterns ---"
+fn greet(name) {
+    match name {
+        "Alice" => "hi Alice"
+        "Bob"   => "hi Bob"
+        _       => "hi stranger"
+    }
+}
+print greet("Alice")
+print greet("Bob")
+print greet("Charlie")
+print greet("")
+print greet("alice")
+
+print "--- bool patterns ---"
+match true {
+    true  => print "yes"
+    false => print "no"
+}
+match false {
+    true  => print "wrong"
+    false => print "correct"
+}
+
+print "--- nil pattern ---"
+let val = nil
+match val {
+    nil => print "got nil"
+    _   => print "not nil"
+}
+
+print "--- match as expression ---"
+let label = match 42 {
+    0  => "zero"
+    42 => "the answer"
+    _  => "other"
+}
+print label
+
+print "--- nested match ---"
+fn classify(n) {
+    match n > 0 {
+        true => match n > 100 {
+            true  => "big positive"
+            false => "small positive"
+        }
+        false => "non-positive"
+    }
+}
+print classify(200)
+print classify(50)
+print classify(-1)
+print classify(0)
+
+print "--- match with side effects ---"
+let cnt = 0
+match 2 {
+    1 => cnt = 10
+    2 => cnt = 20
+    _ => cnt = 30
+}
+print cnt
+
+print "--- float range ---"
+let f = 3.5
+match f {
+    0..5  => print "between 0 and 5"
+    5..10 => print "between 5 and 10"
+    _     => print "out of range"
+}

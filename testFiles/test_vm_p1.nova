@@ -1,0 +1,85 @@
+// Phase 8 Part 1 — VM smoke test
+// Only uses: literals, arithmetic, comparisons, logical ops, variables, print
+// No: functions, arrays, hashmaps, string interpolation, control flow
+
+// ── 1. Integer arithmetic ─────────────────────────────────────────
+print 1 + 2        // 3
+print 10 - 3       // 7
+print 4 * 5        // 20
+print 15 / 3       // 5.0  (/ always gives Float — matches tree-walker)
+print 17 % 5       // 2
+
+// ── 2. Float arithmetic ───────────────────────────────────────────
+print 1.5 + 2.5    // 4
+print 3.0 * 2.0    // 6
+print 7.5 - 2.5    // 5
+print 9.0 / 3.0    // 3
+
+// ── 3. Mixed int/float ────────────────────────────────────────────
+print 2 + 1.5      // 3.5
+print 4.0 * 3      // 12
+
+// ── 4. Variables ──────────────────────────────────────────────────
+let x = 42
+print x            // 42
+let y = x + 8
+print y            // 50
+x = x * 2
+print x            // 84
+let z = x - y
+print z            // 34
+
+// ── 5. Boolean literals ───────────────────────────────────────────
+print true         // true
+print false        // false
+
+// ── 6. Integer comparisons ────────────────────────────────────────
+print 1 == 1       // true
+print 1 == 2       // false
+print 1 != 2       // true
+print 1 != 1       // false
+print 3 < 5        // true
+print 5 < 3        // false
+print 5 <= 5       // true
+print 6 <= 5       // false
+print 7 > 6        // true
+print 6 > 7        // false
+print 8 >= 8       // true
+print 7 >= 8       // false
+
+// ── 7. Logical operators ──────────────────────────────────────────
+print true && true    // true
+print true && false   // false
+print false && true   // false
+print false || true   // true
+print false || false  // false
+print !true           // false
+print !false          // true
+
+// ── 8. Compound expressions ───────────────────────────────────────
+print 2 + 3 * 4       // 14  (precedence: * before +)
+print (2 + 3) * 4     // 20
+print 10 / 2 + 3      // 8.0  (/ gives Float, then Float + Int = Float)
+print 10 - 3 - 2      // 5
+print 1 == 1 && 2 == 2   // true
+print 1 == 1 && 2 == 3   // false
+
+// ── 9. String literals and concatenation ─────────────────────────
+let s = "hello"
+let t = " world"
+print s + t        // hello world
+let greeting = "hi" + " " + "there"
+print greeting     // hi there
+
+// ── 10. String comparisons ────────────────────────────────────────
+print "abc" == "abc"   // true
+print "abc" == "xyz"   // false
+print "abc" < "abd"    // true
+print "z" > "a"        // true
+print "abc" <= "abc"   // true
+print "abc" >= "abd"   // false
+
+// ── 11. Nil ───────────────────────────────────────────────────────
+let n = nil
+print n            // nil
+print nil == nil   // true

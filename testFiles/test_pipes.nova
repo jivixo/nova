@@ -1,0 +1,50 @@
+print "--- basic pipe ---"
+let result = [3, 1, 2] |> sort()
+print result
+
+print "--- 3+ chained pipes ---"
+let r = [3, 1, 4, 1, 5] |> sort() |> reverse() |> len()
+print r
+
+print "--- pipe into print ---"
+"  hello  " |> trim() |> upper() |> print
+
+print "--- pipe with built-in that takes extra args ---"
+let words = ["banana", "apple", "cherry"]
+let r2 = words |> sort() |> slice(0, 2)
+print r2
+
+print "--- pipe with lambda ---"
+let nums = [1, 2, 3, 4, 5]
+let r3 = nums |> filter((x) -> x > 2) |> map((x) -> x * 10)
+print r3
+
+print "--- pipe with user defined function ---"
+fn double_all(arr) {
+    map(arr, (x) -> x * 2)
+}
+fn keep_big(arr) {
+    filter(arr, (x) -> x > 4)
+}
+let r4 = [1, 2, 3, 4, 5] |> double_all() |> keep_big()
+print r4
+
+print "--- pipe result used in expression ---"
+let total = [1, 2, 3] |> map((x) -> x * 2) |> sum()
+print total
+
+print "--- pipe with reduce ---"
+let product = [1, 2, 3, 4, 5] |> reduce(1, (acc, x) -> acc * x)
+print product
+
+print "--- pipe on string operations ---"
+let r5 = "hello world nova" |> split(" ") |> len()
+print r5
+
+print "--- pipe with single element ---"
+let r6 = [42] |> sort() |> reverse()
+print r6
+
+print "--- pipe on empty array ---"
+let r7 = [] |> sort() |> len()
+print r7

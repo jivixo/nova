@@ -1,0 +1,188 @@
+// test_methods.nova — stress test for impl blocks and method calls
+// Run both backends and diff output:
+//   nova run test_methods.nova
+//   nova run --tree test_methods.nova
+
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── Basic method call ─────────────────────────────────────────────────────────
+
+struct Point { x, y }
+
+impl Point {
+    fn distance(self) {
+        sqrt(self.x * self.x + self.y * self.y)
+    }
+
+    fn translate(self, dx, dy) {
+        self.x += dx
+        self.y += dy
+    }
+
+    fn scale(self, factor) {
+        self.x = self.x * factor
+        self.y = self.y * factor
+    }
+
+    fn to_str(self) {
+        "(" + str(self.x) + ", " + str(self.y) + ")"
+    }
+}
+
+let p = Point { x: 3, y: 4 }
+check("distance 3-4-5", p.distance(), 5.0)
+
+p.translate(1, 2)
+check("translate x", p.x, 4)
+check("translate y", p.y, 6)
+
+p.scale(2)
+check("scale x", p.x, 8)
+check("scale y", p.y, 12)
+
+check("to_str", p.to_str(), "(8, 12)")
+
+// ── Method returning a value used in expression ───────────────────────────────
+
+struct Rect { w, h }
+
+impl Rect {
+    fn area(self) {
+        self.w * self.h
+    }
+
+    fn perimeter(self) {
+        2 * (self.w + self.h)
+    }
+
+    fn is_square(self) {
+        self.w == self.h
+    }
+}
+
+let r = Rect { w: 4, h: 6 }
+check("area", r.area(), 24)
+check("perimeter", r.perimeter(), 20)
+check("is_square false", r.is_square(), false)
+
+let sq = Rect { w: 5, h: 5 }
+check("is_square true", sq.is_square(), true)
+
+// ── Method with no extra args (only self) ────────────────────────────────────
+
+struct Counter { n }
+
+impl Counter {
+    fn increment(self) {
+        self.n += 1
+    }
+
+    fn reset(self) {
+        self.n = 0
+    }
+
+    fn value(self) {
+        self.n
+    }
+}
+
+let c = Counter { n: 0 }
+c.increment()
+c.increment()
+c.increment()
+check("counter after 3 increments", c.value(), 3)
+c.reset()
+check("counter after reset", c.value(), 0)
+
+// ── Method result stored in variable ────────────────────────────────────────
+
+let area = r.area()
+check("area stored", area, 24)
+
+// ── Method call in arithmetic expression ────────────────────────────────────
+
+let total = r.area() + sq.area()
+check("area sum", total, 49)
+
+// ── Multiple impl blocks for different types ─────────────────────────────────
+
+struct Circle { radius }
+
+impl Circle {
+    fn area(self) {
+        3.14159 * self.radius * self.radius
+    }
+
+    fn diameter(self) {
+        self.radius * 2
+    }
+}
+
+let circle = Circle { radius: 5 }
+check("circle diameter", circle.diameter(), 10)
+let ca = circle.area()
+check("circle area gt 78", ca > 78.0, true)
+check("circle area lt 79", ca < 79.0, true)
+
+// ── Method mutates field, visible after call ──────────────────────────────────
+
+struct BankAccount { balance }
+
+impl BankAccount {
+    fn deposit(self, amount) {
+        self.balance += amount
+    }
+
+    fn withdraw(self, amount) {
+        self.balance -= amount
+    }
+
+    fn get_balance(self) {
+        self.balance
+    }
+}
+
+let acc = BankAccount { balance: 100 }
+acc.deposit(50)
+check("deposit", acc.get_balance(), 150)
+acc.withdraw(30)
+check("withdraw", acc.get_balance(), 120)
+
+// ── Method called in loop ────────────────────────────────────────────────────
+
+let acc2 = BankAccount { balance: 0 }
+let i = 0
+while i < 10 {
+    acc2.deposit(10)
+    i += 1
+}
+check("loop deposit x10", acc2.get_balance(), 100)
+
+// ── Method with compound field assignment inside ─────────────────────────────
+
+struct Vec2 { x, y }
+
+impl Vec2 {
+    fn add_to(self, other_x, other_y) {
+        self.x += other_x
+        self.y += other_y
+    }
+
+    fn magnitude_sq(self) {
+        self.x * self.x + self.y * self.y
+    }
+}
+
+let v = Vec2 { x: 1, y: 2 }
+v.add_to(3, 4)
+check("add_to x", v.x, 4)
+check("add_to y", v.y, 6)
+check("magnitude_sq", v.magnitude_sq(), 52)
+
+print("done")

@@ -1,0 +1,72 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// primitive independence
+let a = 42
+let b = a
+b = 99
+check("int independence", a, 42)
+
+// array — mutating clone must not affect original
+let arr = [1, 2, 3]
+let arr2 = arr
+arr2 = push(arr2, 4)
+check("array original length", len(arr), 3)
+check("array clone length", len(arr2), 4)
+
+// nested array
+let nested = [[1, 2], [3, 4]]
+let nested2 = nested
+nested2 = push(nested2, [5, 6])
+check("nested original length", len(nested), 2)
+check("nested clone length", len(nested2), 3)
+
+// hashmap independence
+let m = {"x": 1, "y": 2}
+let m2 = setKey(m, "z", 3)
+check("map original keys", hasKey(m, "z"), false)
+check("map clone has new key", hasKey(m2, "z"), true)
+check("map original x", m["x"], 1)
+check("map clone x", m2["x"], 1)
+
+// structs are reference types — assignment shares the same struct
+struct Point { x, y }
+let p = Point { x: 10, y: 20 }
+let p2 = p
+p2.x = 99
+check("struct reference semantics", p.x, 99)   // both p and p2 point to the same struct
+check("struct clone x", p2.x, 99)
+
+// closure captured state is independent per closure instance
+fn make_counter() {
+    let n = 0;
+    () -> {
+        n = n + 1
+        n
+    }
+}
+let c1 = make_counter()
+let c2 = make_counter()
+c1(); c1(); c1()
+check("c1 count", c1(), 4)
+check("c2 count", c2(), 1)
+
+// enum payload — multiline arms (no commas) to isolate from comma-parsing
+enum Wrapper { Val(data) }
+let w = Wrapper.Val([1, 2, 3])
+let wpayload = match w {
+    Wrapper.Val(d) => len(d)
+    _ => -1
+}
+check("enum payload", wpayload, 3)
+
+// enum payload — inline comma-separated arms
+let wpayload2 = match w { Wrapper.Val(d) => len(d), _ => -1 }
+check("enum payload inline", wpayload2, 3)
+
+print("done")

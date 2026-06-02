@@ -1,0 +1,85 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+fn fib(n) {
+    if n <= 1 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+fn double(n)   { n * 2 }
+fn square(n)   { n * n }
+fn identity(x) { x }
+fn negate(n)   { n * -1 }
+
+// ── basic lambda ──────────────────────────────────────────────────────────────
+let doubled = spawnAll([1, 2, 3, 4, 5], (n) -> n * 2)
+check("spawnAll doubles: len", len(doubled), 5)
+check("spawnAll doubles: sum", sum(doubled), 30)
+
+// ── order preserved ───────────────────────────────────────────────────────────
+// results must match element order even though threads run concurrently
+let squares = spawnAll([1, 2, 3, 4, 5], square)
+check("spawnAll squares: [0]", squares[0], 1)
+check("spawnAll squares: [1]", squares[1], 4)
+check("spawnAll squares: [2]", squares[2], 9)
+check("spawnAll squares: [3]", squares[3], 16)
+check("spawnAll squares: [4]", squares[4], 25)
+
+// ── named function ────────────────────────────────────────────────────────────
+let negs = spawnAll([10, 20, 30], negate)
+check("spawnAll named fn: [0]", negs[0], -10)
+check("spawnAll named fn: [1]", negs[1], -20)
+check("spawnAll named fn: [2]", negs[2], -30)
+
+// ── compute-heavy: parallel fib ───────────────────────────────────────────────
+let fibs = spawnAll([5, 6, 7, 8, 9, 10], fib)
+check("spawnAll fib(5)",  fibs[0], 5)
+check("spawnAll fib(6)",  fibs[1], 8)
+check("spawnAll fib(7)",  fibs[2], 13)
+check("spawnAll fib(8)",  fibs[3], 21)
+check("spawnAll fib(9)",  fibs[4], 34)
+check("spawnAll fib(10)", fibs[5], 55)
+
+// ── identity with strings ─────────────────────────────────────────────────────
+let words = spawnAll(["alpha", "beta", "gamma"], identity)
+check("spawnAll identity strings: len", len(words), 3)
+check("spawnAll identity strings: [0]", words[0], "alpha")
+check("spawnAll identity strings: [2]", words[2], "gamma")
+
+// ── empty array ───────────────────────────────────────────────────────────────
+let empty = spawnAll([], (x) -> x)
+check("spawnAll empty array: len", len(empty), 0)
+
+// ── single element ────────────────────────────────────────────────────────────
+let one = spawnAll([42], double)
+check("spawnAll single element", one[0], 84)
+
+// ── closure captures outer variable ──────────────────────────────────────────
+let factor = 7
+let scaled = spawnAll([1, 2, 3], (n) -> n * factor)
+check("spawnAll closure captures factor: [0]", scaled[0], 7)
+check("spawnAll closure captures factor: [1]", scaled[1], 14)
+check("spawnAll closure captures factor: [2]", scaled[2], 21)
+
+// ── large batch ───────────────────────────────────────────────────────────────
+let nums = []
+let i = 0
+while i < 20 {
+    let nums = push(nums, i)
+    let i = i + 1
+}
+let results = spawnAll(nums, square)
+check("spawnAll 20 tasks: len", len(results), 20)
+check("spawnAll 20 tasks: [0]",  results[0],  0)
+check("spawnAll 20 tasks: [10]", results[10], 100)
+check("spawnAll 20 tasks: [19]", results[19], 361)
+
+// ── no nil results ────────────────────────────────────────────────────────────
+let has_nil = any(results, (v) -> v == nil)
+check("spawnAll no nil in results", has_nil, false)
+
+println("all spawnAll tests passed")

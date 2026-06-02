@@ -1,0 +1,86 @@
+fn check(label, got, expected) {
+    if got == expected {
+        print("ok: " + label)
+    } else {
+        print("FAIL: " + label + " — got: " + str(got) + " expected: " + str(expected))
+    }
+}
+
+// ── basic: one channel ready ──────────────────────────────────────────────────
+let ch = channel()
+spawn send(ch, 42)
+let got = nil
+select {
+    case ch -> v {
+        let got = v
+    }
+}
+check("basic select receives value", got, 42)
+
+// ── two channels: whichever is ready first wins ───────────────────────────────
+let ch1 = channel()
+let ch2 = channel()
+spawn send(ch2, "second")
+
+let winner = nil
+select {
+    case ch1 -> v { let winner = "ch1" }
+    case ch2 -> v { let winner = v }
+}
+check("select picks ready channel", winner, "second")
+
+// ── value is bound inside arm body ────────────────────────────────────────────
+let result_ch = channel()
+spawn send(result_ch, 99)
+let received = 0
+select {
+    case result_ch -> n {
+        let received = n * 2
+    }
+}
+check("select bind var usable in body", received, 198)
+
+// ── select with different value types ─────────────────────────────────────────
+let str_ch = channel()
+spawn send(str_ch, "hello")
+let got_str = ""
+select {
+    case str_ch -> s {
+        let got_str = s
+    }
+}
+check("select receives string", got_str, "hello")
+
+// ── select in a loop: drain a channel ─────────────────────────────────────────
+let pipe = channel()
+spawn send(pipe, 10)
+spawn send(pipe, 20)
+spawn send(pipe, 30)
+
+let total = 0
+let i = 0
+while i < 3 {
+    select {
+        case pipe -> n {
+            let total = total + n
+        }
+    }
+    let i = i + 1
+}
+check("select loop drains channel sum=60", total, 60)
+
+// ── select with struct value ───────────────────────────────────────────────────
+struct Msg { kind, data }
+
+let msg_ch = channel()
+spawn send(msg_ch, Msg { kind: "ping", data: 1 })
+
+let got_kind = ""
+select {
+    case msg_ch -> m {
+        let got_kind = m.kind
+    }
+}
+check("select receives struct", got_kind, "ping")
+
+println("all select tests passed")

@@ -1,0 +1,158 @@
+// Long-lived object graph stress test
+// Tests reference counting, CoW, and cycle detection under real pressure
+
+// ── 1. LINKED LIST ────────────────────────────────────────
+print "--- linked list ---"
+fn make_node(val, next) {
+    {"val": val, "next": next}
+}
+
+fn list_sum(node) {
+    let total = 0
+    while node != nil {
+        total = total + node["val"]
+        node = node["next"]
+    }
+    total
+}
+
+fn list_len(node) {
+    let n = 0
+    while node != nil {
+        n = n + 1
+        node = node["next"]
+    }
+    n
+}
+
+// build a 1000-node linked list
+let head = nil
+for i in 0..1000 {
+    head = make_node(i, head)
+}
+print list_len(head)   // 1000
+print list_sum(head)   // 499500 (sum of 0..999)
+
+// ── 2. BINARY TREE ────────────────────────────────────────
+print "--- binary tree ---"
+fn make_leaf(val) {
+    {"val": val, "left": nil, "right": nil}
+}
+
+fn make_branch(val, left, right) {
+    {"val": val, "left": left, "right": right}
+}
+
+fn tree_sum(node) {
+    if node == nil { return 0 }
+    node["val"] + tree_sum(node["left"]) + tree_sum(node["right"])
+}
+
+fn tree_depth(node) {
+    if node == nil { return 0 }
+    let l = tree_depth(node["left"])
+    let r = tree_depth(node["right"])
+    let deeper = l
+    if r > l { deeper = r }
+    1 + deeper
+}
+
+// build a balanced tree of depth 10 (2047 nodes)
+fn build_tree(depth) {
+    if depth == 0 { return make_leaf(1) }
+    let left  = build_tree(depth - 1)
+    let right = build_tree(depth - 1)
+    make_branch(1, left, right)
+}
+
+let tree = build_tree(10)
+print tree_depth(tree)   // 11
+print tree_sum(tree)     // 2047 (2^11 - 1 nodes, each with val=1)
+
+// ── 3. HASHMAP GRAPH ──────────────────────────────────────
+print "--- hashmap graph ---"
+// adjacency list graph: each node maps to a list of neighbour names
+let graph = {}
+graph = setKey(graph, "a", ["b", "c"])
+graph = setKey(graph, "b", ["c", "d"])
+graph = setKey(graph, "c", ["d"])
+graph = setKey(graph, "d", [])
+
+fn degree(graph, node) {
+    len(graph[node])
+}
+
+print degree(graph, "a")   // 2
+print degree(graph, "b")   // 2
+print degree(graph, "c")   // 1
+print degree(graph, "d")   // 0
+
+// ── 4. LARGE ARRAY ACCUMULATION ───────────────────────────
+print "--- large array accumulation ---"
+let big = []
+for i in 0..5000 {
+    big = push(big, i * 2)
+}
+print len(big)        // 5000
+print big[0]          // 0
+print big[4999]       // 9998
+print sum(big)        // sum of 0,2,4,...,9998 = 24995000
+
+// ── 5. ARRAY OF HASHMAPS (RECORDS) ────────────────────────
+print "--- array of records ---"
+let records = []
+for i in 0..500 {
+    let rec = {"id": i, "score": i * 3, "label": "item_{i}"}
+    records = push(records, rec)
+}
+print len(records)
+print records[0]["id"]
+print records[499]["score"]
+print records[250]["label"]
+
+// sum all scores
+let total = 0
+for rec in records {
+    total = total + rec["score"]
+}
+print total   // sum of 0,3,6,...,1497 = 3*sum(0..499) = 3*124750 = 374250
+
+// ── 6. DEEP NESTING ───────────────────────────────────────
+print "--- deep nesting ---"
+// build {"a": {"a": {"a": ...}}} 50 levels deep
+let nested = {"val": 0}
+for i in 1..51 {
+    nested = {"val": i, "inner": nested}
+}
+// walk down to the bottom
+let cur = nested
+let depth = 0
+while cur != nil {
+    depth = depth + 1
+    if hasKey(cur, "inner") {
+        cur = cur["inner"]
+    } else {
+        cur = nil
+    }
+}
+print depth   // 51
+
+// ── 7. LONG-LIVED OBJECTS ACROSS FUNCTION CALLS ───────────
+print "--- long-lived across calls ---"
+fn append_n(arr, val, n) {
+    let i = 0
+    while i < n {
+        arr = push(arr, val)
+        i = i + 1
+    }
+    arr
+}
+
+let base = [1, 2, 3]
+let grown = append_n(base, 99, 1000)
+print len(base)    // 3   — original unchanged (CoW)
+print len(grown)   // 1003
+print grown[500]   // 99
+
+// ── 8. MEMORY REPORT ──────────────────────────────────────
+print "--- done ---"

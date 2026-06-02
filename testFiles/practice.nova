@@ -1,0 +1,202 @@
+// ── 1. FIZZBUZZ ──────────────────────────────────────────────────
+print "--- FizzBuzz ---"
+for i in 1..31 {
+    if i % 15 == 0 {
+        print "Nova"
+    } else if i % 3 == 0 {
+        print "Fizz"
+    } else if i % 5 == 0 {
+        print "Buzz"
+    } else {
+        print i
+    }
+}
+
+// ── 2. REVERSE A STRING ──────────────────────────────────────────
+print "--- reverse ---"
+fn rev(s) {
+    let chars  = split(s, "")
+    let result = ""
+    let i      = len(chars) - 1
+    while i >= 0 {
+        result = result + chars[i]
+        i = i - 1
+    }
+    result
+}
+print rev("hello")      // olleh
+print rev("nova")       // avon
+print rev("a")          // a
+print rev("")           // ""
+
+// ── 3. CAESAR CIPHER ─────────────────────────────────────────────
+print "--- caesar ---"
+fn caesar(text, shift) {
+    let chars  = split(text, "")
+    let result = ""
+    for ch in chars {
+        let c = ord(ch)
+        if c >= 97 && c <= 122 {
+            result = result + chr(mod(c - 97 + shift, 26) + 97)
+        } else {
+            result = result + ch
+        }
+    }
+    result
+}
+print caesar("hello", 3)    // khoor
+print caesar("khoor", -3)   // hello
+print caesar("xyz", 3)      // abc
+
+// ── 4. WORD COUNT ────────────────────────────────────────────────
+print "--- word count ---"
+fn word_count(sentence) {
+    let words = split(sentence, " ")
+    reduce(words, {}, (acc, w) -> {
+        let n = acc[w] ?? 0
+        setKey(acc, w, n + 1)
+    })
+}
+let wc = word_count("the cat sat on the mat")
+print wc["the"]    // 2
+print wc["cat"]    // 1
+print wc["mat"]    // 1
+
+// ── 5. FLATTEN ───────────────────────────────────────────────────
+print "--- flatten ---"
+fn flatten(arr) {
+    reduce(arr, [], (acc, item) -> {
+        if isArray(item) {
+            concat(acc, flatten(item))
+        } else {
+            push(acc, item)
+        }
+    })
+}
+print flatten([[1, 2], [3, [4, 5]], [6]])   // [1, 2, 3, 4, 5, 6]
+print flatten([1, [2, [3, [4]]]])           // [1, 2, 3, 4]
+print flatten([])                           // []
+
+// ── 6. RUNNING TOTAL ─────────────────────────────────────────────
+print "--- running total ---"
+fn running(arr) {
+    let result = []
+    let total  = 0
+    for n in arr {
+        total  = total + n
+        result = push(result, total)
+    }
+    result
+}
+print running([1, 2, 3, 4])       // [1, 3, 6, 10]
+print running([10, -5, 20, 3])    // [10, 5, 25, 28]
+print running([])                 // []
+
+// ── 7. PIPE THROUGH ──────────────────────────────────────────────
+print "--- pipe_through ---"
+fn pipe_through(value, fns) {
+    reduce(fns, value, (acc, f) -> f(acc))
+}
+let result = pipe_through(3, [
+    (x) -> x * 2,
+    (x) -> x + 1,
+    (x) -> x * x
+])
+print result   // 49  (3→6→7→49)
+
+let result = pipe_through("hello world", [
+    (s) -> split(s, " "),
+    (a) -> map(a, (w) -> upper(w)),
+    (a) -> join(a, "-")
+])
+print result   // HELLO-WORLD
+
+// ── 8. ITERATIVE FIBONACCI ───────────────────────────────────────
+// Note: Nova functions get a cloned env — mutations to global variables
+// inside a fn don't propagate back, so true memoization requires a VM
+// with shared mutable state. Iterative fib is O(n) instead.
+print "--- iterative fib ---"
+fn fib(n) {
+    if n <= 1 { return n }
+    let a = 0
+    let b = 1
+    for i in 2..n+1 {
+        let tmp = a + b
+        a = b
+        b = tmp
+    }
+    b
+}
+print fib(10)   // 55
+print fib(20)   // 6765
+print fib(35)   // 9227465
+
+// ── 9. GROUP AND SUMMARISE ───────────────────────────────────────
+print "--- group and summarise ---"
+let staff = [
+    {"dept": "eng", "salary": 90},
+    {"dept": "eng", "salary": 80},
+    {"dept": "hr",  "salary": 70},
+    {"dept": "hr",  "salary": 60},
+    {"dept": "eng", "salary": 100}
+]
+
+fn avg_salary_by_dept(records) {
+    // first pass: sum and count per dept
+    let totals = reduce(records, {}, (acc, r) -> {
+        let dept  = r["dept"]
+        let entry = acc[dept] ?? {"sum": 0, "count": 0}
+        let entry = setKey(entry, "sum",   entry["sum"]   + r["salary"])
+        let entry = setKey(entry, "count", entry["count"] + 1)
+        setKey(acc, dept, entry)
+    })
+    // second pass: compute averages
+    let result = {}
+    for dept in keys(totals) {
+        let e      = totals[dept]
+        let result = setKey(result, dept, e["sum"] / e["count"])
+    }
+    result
+}
+
+let avgs = avg_salary_by_dept(staff)
+print avgs["eng"]   // 90.0  ((90+80+100)/3)
+print avgs["hr"]    // 65.0  ((70+60)/2)
+
+// ── 10. LINKED LIST ──────────────────────────────────────────────
+print "--- linked list ---"
+fn ll_push(list, val) {
+    {"val": val, "next": list}
+}
+
+fn ll_to_array(list) {
+    let result = []
+    let node   = list
+    while node != nil {
+        result = push(result, node["val"])
+        node   = node["next"]
+    }
+    result
+}
+
+fn ll_sum(list) {
+    let total = 0
+    let node  = list
+    while node != nil {
+        total = total + node["val"]
+        node  = node["next"]
+    }
+    total
+}
+
+// build list 1→2→3→4→5 (push prepends, so push in reverse)
+let ll = nil
+for i in 1..6 {
+    ll = ll_push(ll, i)
+}
+// ll is now 5→4→3→2→1 (stack order)
+
+print ll_to_array(ll)   // [5, 4, 3, 2, 1]
+print ll_sum(ll)        // 15
+print ll["val"]         // 5  (head)
+print ll["next"]["val"] // 4  (second node)

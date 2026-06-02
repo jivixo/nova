@@ -1,0 +1,53 @@
+// ========================================
+// LAYER 2 — Cycle detection tests
+// gc runs automatically between statements — no manual call needed
+// ========================================
+
+print "--- basic cycle ---"
+let a = [1, 2]
+let b = [3, 4]
+a[0] = b
+b[0] = a
+a = nil
+b = nil
+print "cycle freed"
+
+print ""
+print "--- self reference ---"
+let x = [1, 2, 3]
+x[0] = x
+x = nil
+print "self-ref freed"
+
+print ""
+print "--- live values safe ---"
+let alive = [10, 20, 30]
+print alive[1]   // 20
+
+print ""
+print "--- chain cycle ---"
+let p = [1]
+let q = [2]
+let r = [3]
+p[0] = q
+q[0] = r
+r[0] = p
+p = nil
+q = nil
+r = nil
+print "chain cycle freed"
+
+print ""
+print "--- mixed live and garbage ---"
+let keep = [99, 100]
+let junk1 = [1]
+let junk2 = [2]
+junk1[0] = junk2
+junk2[0] = junk1
+junk1 = nil
+junk2 = nil
+print keep[0]   // 99
+print keep[1]   // 100
+
+print ""
+print "ALL CYCLE TESTS PASSED"

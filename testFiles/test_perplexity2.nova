@@ -1,0 +1,107 @@
+struct Task { id, title, done }
+
+enum Result {
+    Ok(value)
+    Err(message)
+}
+
+fn safe_div(a, b) {
+    if b == 0 {
+        throw "division by zero"
+    }
+    a / b
+}
+
+fn fib(n) {
+    if n <= 1 { n } else { fib(n - 1) + fib(n - 2) }
+}
+
+fn make_task(id, title) {
+    Task { id: id, title: title, done: false }
+}
+
+fn mark_done(task) {
+    task.done = true
+    task
+}
+
+fn summarize(tasks) {
+    let total = len(tasks)
+    let completed = count(tasks, (t) -> t.done)
+    "tasks={total}, done={completed}"
+}
+
+fn worker(ch, n) {
+    let value = fib(n)
+    send(ch, value)
+    return value
+}
+
+fn compute_many(nums) {
+    let ch = channel()
+    let handles = []
+
+    for n in nums {
+        let h = spawn worker(ch, n)
+        let handles = push(handles, h)
+    }
+
+    let results = []
+    for _ in nums {
+        let v = recv(ch)
+        let results = push(results, v)
+    }
+
+    for h in handles {
+        wait(h)
+    }
+
+    results
+}
+
+fn classify_score(score) {
+    match score {
+        90..101 => "A"
+        70..90 => "B"
+        50..70 => "C"
+        _ => "F"
+    }
+}
+
+let tasks = [
+    make_task(1, "write parser"),
+    make_task(2, "build vm"),
+    make_task(3, "add channels")
+]
+
+mark_done(tasks[0])
+mark_done(tasks[2])
+
+print summarize(tasks)
+
+let nums = [5, 6, 7, 8]
+let fibs = compute_many(nums)
+print fibs
+
+for n in fibs {
+    print "fib={n}, score={classify_score(n * 10)}"
+}
+
+try {
+    print safe_div(10, 0)
+} catch err {
+    print "caught: {err}"
+}
+
+let ok = Result.Ok(42)
+let bad = Result.Err("oops")
+
+match ok {
+    Result.Ok(v) => print "success {v}"
+    Result.Err(e) => print "error {e}"
+}
+
+match bad {
+    Result.Ok(v) => print "success {v}"
+    Result.Err(e) => print "error {e}"
+}

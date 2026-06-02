@@ -1,0 +1,31 @@
+// Pinpointing: does spawn from inside a fn fail when array is a fn param?
+
+fn worker(arr, start, end) {
+    let i = start
+    while i < end {
+        arr[i] = i + 1
+        i = i + 1
+    }
+    0
+}
+
+fn launcher_with_param(arr, n) {
+    let h = spawn worker(arr, 0, n)
+    wait(h)
+    0
+}
+
+// Test 1: spawn from inside fn with array param
+let a = make_array(4, 0)
+launcher_with_param(a, 4)
+println("param: a[0]=" + str(a[0]) + " a[3]=" + str(a[3]))  // expect 1 4
+
+// Test 2: spawn from inside fn with local array
+fn launcher_with_local(n) {
+    let arr = make_array(n, 0)
+    let h = spawn worker(arr, 0, n)
+    wait(h)
+    arr
+}
+let b = launcher_with_local(4)
+println("local: b[0]=" + str(b[0]) + " b[3]=" + str(b[3]))  // expect 1 4

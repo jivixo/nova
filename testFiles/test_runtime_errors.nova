@@ -1,0 +1,59 @@
+// test_runtime_errors.nova — runtime errors now throw instead of returning nil
+
+// 1. array out-of-bounds
+try {
+    let a = [1, 2, 3]
+    let x = a[10]
+    print "bad"
+} catch e {
+    print "caught oob: " + e
+}
+
+// 2. division by zero (integer mod)
+try {
+    let x = 5 % 0
+    print "bad"
+} catch e {
+    print "caught mod: " + e
+}
+
+// 3. division by zero (div)
+try {
+    let x = 10 / 0
+    print "bad"
+} catch e {
+    print "caught div: " + e
+}
+
+// 4. call a non-closure value
+try {
+    let f = 42
+    let result = f(1, 2)
+    print "bad"
+} catch e {
+    print "caught call: " + e
+}
+
+// 5. index write out-of-bounds
+try {
+    let a = [1, 2, 3]
+    a[99] = 7
+    print "bad"
+} catch e {
+    print "caught set oob: " + e
+}
+
+// 6. subscript wrong type
+try {
+    let n = 42
+    let x = n[0]
+    print "bad"
+} catch e {
+    print "caught bad subscript: " + e
+}
+
+// 7. normal arithmetic still works after errors
+let sum = 3 + 4
+print sum
+
+print "done"
